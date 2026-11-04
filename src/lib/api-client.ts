@@ -15,16 +15,35 @@ export async function api<T>(
     const check = await appCheckToken();
     if (check) headers["X-Firebase-AppCheck"] = check;
   }
-  const res = await fetch("/api/operation", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ action, ...payload }),
-    cache: "no-store",
-  });
-  const body = await res.json();
+  let res: Response;
+  try {
+    res = await fetch("/api/operation", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action, ...payload }),
+      cache: "no-store",
+    });
+  } catch {
+    throw new Error(
+      "Não foi possível conectar ao servidor. Confira a conexão e tente novamente.",
+    );
+  }
+  // A plataforma pode responder HTML ou um corpo vazio quando a função não inicia.
+  // Nunca exiba o corpo bruto, que pode conter detalhes internos do servidor.
+  const invalidResponse = `O servidor não respondeu corretamente (HTTP ${res.status}). Tente novamente; se continuar, avise o RH.`;
+  let body: unknown;
+  try {
+    body = JSON.parse(await res.text());
+  } catch {
+    throw new Error(invalidResponse);
+  }
+  if (body === null || typeof body !== "object")
+    throw new Error(invalidResponse);
   if (!res.ok)
     throw new Error(
-      body.error || "Não foi possível concluir. Tente novamente.",
+      "error" in body && typeof body.error === "string"
+        ? body.error
+        : invalidResponse,
     );
   return body as T;
 }
