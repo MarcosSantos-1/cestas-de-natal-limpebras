@@ -59,11 +59,32 @@ const audit = (
 });
 export async function requireAdmin(token: string): Promise<Admin> {
   if (!token) throw new AppError("Entre para acessar o painel.", 401);
+  // Falhas de configuração não são falhas da sessão do usuário.
+  const auth = authentication();
   let decoded;
   try {
-    decoded = await authentication().verifyIdToken(token, true);
-  } catch {
-    throw new AppError("Sua sessão expirou. Entre novamente.", 401);
+    decoded = await auth.verifyIdToken(token, true);
+  } catch (error) {
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String(error.code)
+        : "";
+    if (["auth/id-token-expired", "auth/id-token-revoked"].includes(code)) {
+      throw new AppError("Sua sessão expirou. Entre novamente.", 401);
+    }
+    if (code === "auth/user-disabled")
+      throw new AppError("Esta conta foi desativada.", 403);
+    if (["auth/argument-error", "auth/invalid-id-token"].includes(code)) {
+      throw new AppError(
+        "A conta não pôde ser validada. Entre novamente e confira se o aplicativo e o servidor usam o mesmo projeto Firebase.",
+        401,
+      );
+    }
+    console.error("admin_verification_failed", code || "unknown");
+    throw new AppError(
+      "Não foi possível validar o acesso no servidor. Confira as credenciais e permissões do Firebase na Vercel.",
+      503,
+    );
   }
   const ref = database().collection("admins").doc(decoded.uid);
   const snap = await ref.get();
