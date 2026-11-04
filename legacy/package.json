@@ -1,0 +1,10 @@
+{
+  "name": "cestas-de-natal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Site de retirada das cestas de Natal com painel do RH (Firebase)",
+  "scripts": {
+    "login": "npx -y firebase-tools login",
+    "deploy": "npx -y firebase-tools deploy --only hosting,firestore --project cestadenatal"
+  }
+}

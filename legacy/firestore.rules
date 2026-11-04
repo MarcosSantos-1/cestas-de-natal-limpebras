@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // Colaboradores: o ID do documento é um código gerado a partir de CPF + nome.
+    // O público só consegue abrir um registro sabendo os dois; listar a base é só para o RH.
+    match /colaboradores/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        resource.data.retirou == false
+        && request.resource.data.retirou == true
+        && request.resource.data.retiradoEm == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['retirou', 'retiradoEm'])
+      );
+    }
+
+    // Administradores: só administradores leem e cadastram.
+    // Exceção: o primeiro administrador pode se cadastrar enquanto config/setup não existir.
+    match /admins/{uid} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || (
+        signedIn() && request.auth.uid == uid
+        && !exists(/databases/$(database)/documents/config/setup)
+        && existsAfter(/databases/$(database)/documents/config/setup)
+      );
+      allow update: if false;
+      allow delete: if isAdmin() && uid != request.auth.uid;
+    }
+
+    // Marca que o primeiro administrador já foi criado.
+    match /config/setup {
+      allow get: if true;
+      allow create: if signedIn()
+        && existsAfter(/databases/$(database)/documents/admins/$(request.auth.uid));
+      allow update, delete: if false;
+    }
+  }
+}

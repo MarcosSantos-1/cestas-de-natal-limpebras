@@ -1,0 +1,8 @@
+legacy/
+tests/
+scripts/
+test-results/
+playwright-report/
+*-debug.log
+.env*
+!.env.example

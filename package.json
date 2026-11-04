@@ -1,0 +1,58 @@
+{
+  "name": "cestas-de-natal",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts",
+    "test:integration": "tsx --conditions=react-server --test tests/*.integration.ts",
+    "test:browser": "playwright test",
+    "seed:demo": "tsx --conditions=react-server tests/seed-demo.ts",
+    "format": "prettier --write src tests *.ts *.json *.mjs",
+    "firebase:login": "firebase login",
+    "deploy:rules": "firebase deploy --only firestore --project cesta-de-natal-limpebras",
+    "emulators": "firebase emulators:start --only auth,firestore --project demo-cestas"
+  },
+  "dependencies": {
+    "@heroui/react": "^3.2.7",
+    "@heroui/styles": "^3.2.7",
+    "@internationalized/date": "^3.12.4",
+    "@tailwindcss/postcss": "^4.1.0",
+    "exceljs": "^4.4.0",
+    "firebase": "^13.2.0",
+    "firebase-admin": "^14.5.0",
+    "html5-qrcode": "^2.3.8",
+    "lucide-react": "^0.577.0",
+    "motion": "^14.9.1",
+    "next": "^16.4.5",
+    "qrcode.react": "^4.2.0",
+    "react": "^19.2.0",
+    "react-aria-components": "^1.22.1",
+    "react-dom": "^19.2.0",
+    "server-only": "^0.0.1",
+    "tailwindcss": "^4.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "firebase-tools": "^15.0.0",
+    "prettier": "^3.9.10",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.7",
+    "exceljs": {
+      "uuid": "^11.1.1"
+    },
+    "@google-cloud/firestore-api": {
+      "glob": "^14.0.2",
+      "minimatch": "^11.0.4"
+    }
+  }
+}

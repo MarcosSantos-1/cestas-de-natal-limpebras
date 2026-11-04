@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cestas de Natal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎄</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<main>
+
+<!-- ================= Colaborador ================= -->
+<section id="v-col">
+  <header class="gift">
+    <h1>Cestas de Natal</h1>
+    <p>Confirme seus dados para retirar a sua cesta.</p>
+    <svg class="bow" viewBox="0 0 120 80" aria-hidden="true"><g fill="var(--berry)" stroke="var(--gold)" stroke-width="2.5"><path d="M60 40 C40 10 8 8 10 30 C12 50 40 46 60 40Z"/><path d="M60 40 C80 10 112 8 110 30 C108 50 80 46 60 40Z"/><path d="M58 42 L44 74 L52 70 L56 78 L62 44Z"/><path d="M62 42 L76 74 L68 70 L64 78 L58 44Z"/></g><circle cx="60" cy="40" r="10" fill="var(--berry-deep)" stroke="var(--gold)" stroke-width="2"/></svg>
+  </header>
+
+  <div class="card">
+    <h2>Seus dados</h2>
+    <p class="hint">Use o mesmo nome e CPF cadastrados no RH.</p>
+    <label for="nome">Nome completo</label>
+    <input id="nome" type="text" autocomplete="name" enterkeyhint="next">
+    <label for="cpf">CPF</label>
+    <input id="cpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" enterkeyhint="search">
+    <button id="btnCheck" class="block">Consultar</button>
+    <div id="res" aria-live="polite"></div>
+  </div>
+  <div class="foot"><a href="#admin">Área do RH</a></div>
+</section>
+
+<!-- ================= RH ================= -->
+<section id="v-adm" hidden>
+  <header class="gift compact">
+    <h1>Painel do RH</h1>
+    <p>Distribuição das cestas em tempo real.</p>
+    <svg class="bow" viewBox="0 0 120 80" aria-hidden="true"><g fill="var(--berry)" stroke="var(--gold)" stroke-width="2.5"><path d="M60 40 C40 10 8 8 10 30 C12 50 40 46 60 40Z"/><path d="M60 40 C80 10 112 8 110 30 C108 50 80 46 60 40Z"/><path d="M58 42 L44 74 L52 70 L56 78 L62 44Z"/><path d="M62 42 L76 74 L68 70 L64 78 L58 44Z"/></g><circle cx="60" cy="40" r="10" fill="var(--berry-deep)" stroke="var(--gold)" stroke-width="2"/></svg>
+  </header>
+
+  <div id="loginPanel" class="card" hidden></div>
+  <div id="admBlock" hidden></div>
+
+  <div id="admMain" hidden>
+    <div class="topbar">
+      <div class="who"><div class="avatar" id="avatar">A</div><div><strong id="signedUser">Administrador</strong><small>Conectado ao painel</small></div></div>
+      <button id="btnLogout" class="ghost small">Sair</button>
+    </div>
+
+    <div class="card">
+      <div class="progress-head"><span class="big" id="sRet">0</span><span class="hint" style="margin:0">de <b id="sTot">0</b> cestas retiradas</span></div>
+      <div class="bar" role="progressbar" aria-label="Cestas retiradas" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="bar"><i id="barFill"></i></div>
+      <div class="split"><span><b id="sPen">0</b> pendentes</span><span><b id="sPct">0%</b> concluído</span></div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabCol" aria-selected="true" aria-controls="colabPanel">Colaboradores</button>
+      <button role="tab" id="tabAdm" aria-selected="false" aria-controls="admPanel">Administradores</button>
+    </div>
+
+    <div id="colabPanel" role="tabpanel" aria-labelledby="tabCol">
+      <div class="card">
+        <h2>Base de colaboradores</h2>
+        <p class="hint">Cadastre um a um ou importe uma planilha (.xlsx ou .csv) com as colunas Nome, CPF e Status. O status da planilha substitui o atual.</p>
+        <div class="row" style="margin-top:12px">
+          <input id="file" type="file" accept=".xlsx,.xls,.csv" hidden>
+          <button id="btnNew">Adicionar colaborador</button>
+          <button id="btnImp" class="ghost">Importar planilha</button>
+          <button id="btnExp" class="ghost">Exportar Excel</button>
+        </div>
+        <div id="impMsg" aria-live="polite"></div>
+      </div>
+
+      <div class="card">
+        <label for="q" style="margin-top:0">Buscar por nome ou CPF</label>
+        <input id="q" type="search" placeholder="Digite para filtrar">
+        <div class="row spread" style="margin-top:14px">
+          <small class="hint" style="margin:0">Marque quem deseja excluir em grupo.</small>
+          <button id="btnDelSelected" class="ghost small" disabled>Excluir selecionados (0)</button>
+        </div>
+        <div class="tw"><table class="colab"><thead><tr><th style="width:36px"><input id="selectAll" type="checkbox" aria-label="Selecionar todos os colaboradores exibidos"></th><th>Nome</th><th class="col-cpf">CPF</th><th>Status</th><th></th></tr></thead><tbody id="tb"></tbody></table></div>
+        <p id="empty" class="empty" hidden>Nenhum colaborador encontrado. Adicione ou importe uma planilha para começar.</p>
+        <p id="more" class="empty" hidden></p>
+      </div>
+    </div>
+
+    <div id="admPanel" role="tabpanel" aria-labelledby="tabAdm" hidden>
+      <div class="card">
+        <div class="row spread">
+          <h2>Administradores</h2>
+          <button id="btnAddAdm" class="small">Adicionar administrador</button>
+        </div>
+        <p class="hint">Quem estiver nesta lista pode entrar no painel com usuário e senha.</p>
+        <div id="addAdmForm" class="addbox" hidden>
+          <label for="naUser">Nome de usuário</label>
+          <input id="naUser" type="text" autocomplete="off" autocapitalize="none" spellcheck="false">
+          <label for="naPass">Senha</label>
+          <input id="naPass" type="password" autocomplete="new-password" placeholder="Mínimo de 6 caracteres">
+          <label for="naPass2">Confirmar senha</label>
+          <input id="naPass2" type="password" autocomplete="new-password">
+          <div class="row" style="margin-top:16px">
+            <button id="btnSaveAdm">Salvar administrador</button>
+            <button id="btnCancelAdm" class="ghost">Cancelar</button>
+          </div>
+        </div>
+        <div id="admMsg" aria-live="polite"></div>
+        <div class="tw"><table style="min-width:340px"><thead><tr><th>Usuário</th><th>Criado em</th><th></th></tr></thead><tbody id="tbAdm"></tbody></table></div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><a href="#">Voltar à tela do colaborador</a></div>
+</section>
+</main>
+
+<!-- ================= Cadastro / edição de colaborador ================= -->
+<dialog id="dlg" aria-labelledby="dlgTitle">
+  <form method="dialog" class="dlg" id="dlgForm" novalidate>
+    <h2 id="dlgTitle">Adicionar colaborador</h2>
+    <label for="eNome">Nome completo</label>
+    <input id="eNome" type="text" autocomplete="off">
+    <label for="eCpf">CPF</label>
+    <input id="eCpf" type="text" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" autocomplete="off">
+    <label for="eStatus">Status</label>
+    <select id="eStatus"><option value="pendente">Pendente</option><option value="retirada">Cesta retirada</option></select>
+    <div id="dlgMsg" aria-live="polite"></div>
+    <div class="actions">
+      <button type="button" id="btnDel" class="danger">Excluir colaborador</button>
+      <div class="row">
+        <button type="button" id="btnDlgCancel" class="ghost">Cancelar</button>
+        <button type="submit" id="btnDlgSave">Salvar</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+</body>
+</html>
