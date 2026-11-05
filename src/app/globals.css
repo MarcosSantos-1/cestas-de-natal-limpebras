@@ -2326,3 +2326,431 @@ a:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* Avisos transitórios ficam fora do fluxo das telas e acima dos diálogos. */
+.app-toasts {
+  z-index: 1000 !important;
+}
+.toast {
+  background: #fff !important;
+  color: var(--navy) !important;
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 45px #06255724;
+  border-radius: 15px;
+}
+.toast--success {
+  border-left: 4px solid var(--green);
+}
+.toast--danger {
+  border-left: 4px solid #bd2733;
+}
+.toast__title {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  font-weight: 600 !important;
+  overflow-wrap: anywhere;
+}
+.toast__close-button {
+  min-width: 30px;
+  min-height: 30px;
+}
+.desktop-sidebar,
+.desktop-heading {
+  display: none;
+}
+.scroll-stage > .step-screen {
+  flex: 0 0 auto;
+  min-height: 100%;
+}
+.profile-card {
+  flex-shrink: 0;
+  min-height: 225px;
+  overflow: visible;
+}
+.profile-card h2 {
+  font-size: clamp(17px, 4.5vw, 21px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
+}
+.profile-card p,
+.profile-card > span {
+  flex-shrink: 0;
+}
+.account-screen {
+  min-width: 0;
+}
+.receipt {
+  flex-shrink: 0;
+}
+.receipt span {
+  font-size: 12px;
+}
+.receipt strong {
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.welcome-screen .screen-actions {
+  margin-top: 20px;
+  padding-bottom: 22px;
+  gap: 13px;
+}
+.welcome-screen .screen-actions > .primary-button {
+  min-height: 64px;
+  font-size: 17px;
+  padding: 0 23px;
+}
+.welcome-screen .welcome-art {
+  flex: 0 1 240px;
+}
+.welcome-screen .screen-copy {
+  margin-top: 10px;
+}
+@media (max-height: 740px) {
+  .welcome-screen .screen-actions {
+    margin-top: 8px;
+    padding-bottom: 8px;
+    gap: 10px;
+  }
+  .welcome-screen .screen-actions > .primary-button {
+    min-height: 58px;
+    font-size: 16px;
+  }
+  .welcome-screen .welcome-art {
+    flex-basis: 160px;
+  }
+  .welcome-screen .screen-copy {
+    margin-top: 0;
+  }
+  .receipt span {
+    font-size: 11px;
+  }
+  .receipt strong {
+    font-size: 14px;
+  }
+  .step-done .done-copy {
+    gap: 8px;
+  }
+  .step-done .success-medal {
+    width: 54px;
+    height: 54px;
+    border-radius: 19px;
+    margin-bottom: 4px;
+  }
+  .step-done .receipt > div {
+    padding: 8px 0;
+  }
+  .check-screen:has(.delivered-header) {
+    gap: 9px;
+  }
+  .check-screen:has(.delivered-header) .receipt > div {
+    padding: 6px 0;
+  }
+}
+@media (min-width: 1024px) {
+  .admin-app {
+    max-width: none;
+    width: 100%;
+    height: 100dvh;
+    border: 0;
+    box-shadow: none;
+    padding-left: 260px;
+    background: var(--surface);
+  }
+  .desktop-sidebar {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 260px;
+    padding: 35px 22px 25px;
+    background: #fff;
+    border-right: 1px solid var(--line);
+    z-index: 6;
+  }
+  .desktop-sidebar > .brand {
+    max-width: 195px;
+    width: 100%;
+    margin: 0 auto 32px;
+  }
+  .sidebar-campaign {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 12px;
+    color: var(--navy);
+    padding: 14px 13px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 29px;
+  }
+  .sidebar-campaign > span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+  }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 650;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin: 0 13px 13px;
+  }
+  .sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sidebar-nav .nav-item {
+    width: 100%;
+    min-height: 52px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 11px;
+    padding: 0 12px;
+    font-size: 13px;
+    line-height: 1.3;
+    color: var(--muted) !important;
+    border-radius: 12px;
+  }
+  .sidebar-nav .nav-icon {
+    width: 30px;
+    height: 32px;
+    background: transparent !important;
+    color: inherit;
+  }
+  .sidebar-nav .nav-item.selected {
+    background: var(--navy) !important;
+    color: white !important;
+  }
+  .sidebar-nav .nav-item.selected .nav-icon {
+    color: var(--yellow);
+  }
+  .sidebar-footer {
+    display: flex;
+    gap: 11px;
+    align-items: center;
+    margin-top: auto;
+    padding: 23px 10px 0;
+    border-top: 1px solid var(--line);
+    color: var(--green);
+  }
+  .sidebar-footer p {
+    font-size: 12px;
+    color: var(--navy);
+    font-weight: 600;
+  }
+  .sidebar-footer small {
+    display: block;
+    font-weight: 400;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 5px;
+  }
+  .admin-app > .bottom-nav {
+    display: none;
+  }
+  .admin-header {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 17px 42px;
+    height: 86px;
+    min-height: 86px;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+  }
+  .admin-header > .brand {
+    display: none;
+  }
+  .desktop-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .desktop-heading > span {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .desktop-heading > strong {
+    font-size: 18px;
+    letter-spacing: -0.03em;
+    font-weight: 650;
+  }
+  .operator-button > span:nth-child(2) {
+    font-size: 13px;
+  }
+  .operator-button small {
+    font-size: 10px;
+  }
+  .operator-avatar {
+    width: 39px;
+    height: 39px;
+    font-size: 12px;
+  }
+  .campaign-ribbon {
+    max-width: none;
+    padding: 10px 42px;
+    height: 37px;
+    min-height: 37px;
+    font-size: 10px;
+  }
+  .admin-stage {
+    width: 100%;
+    max-width: 1160px;
+    padding: 38px 42px 30px;
+  }
+  .check-stage {
+    overflow: auto;
+  }
+  .check-screen {
+    max-width: 560px;
+    width: 100%;
+    margin: 0 auto;
+    background: white;
+    padding: 27px 30px;
+    border: 1px solid var(--line);
+    border-radius: 21px;
+    min-height: 580px;
+  }
+  .check-screen:has(.camera-launch) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 25px;
+    max-width: none;
+    min-height: 540px;
+    padding: 34px;
+  }
+  .check-screen:has(.camera-launch) > .screen-copy {
+    grid-column: 1/-1;
+  }
+  .check-screen:has(.camera-launch) .camera-launch {
+    grid-column: 1;
+    grid-row: 2/4;
+    height: 100%;
+    min-height: 245px !important;
+    max-height: none;
+  }
+  .check-screen:has(.camera-launch) .manual-code {
+    grid-column: 2;
+    grid-row: 2;
+    align-self: center;
+  }
+  .check-screen:has(.camera-launch) .check-hint {
+    grid-column: 2;
+    grid-row: 3;
+    align-self: start;
+    margin: 0 0 20px;
+    font-size: 12px;
+  }
+  .screen-copy h1 {
+    font-size: 36px;
+  }
+  .people-screen {
+    gap: 24px;
+  }
+  .people-actions {
+    max-width: 440px;
+  }
+  .people-search {
+    max-width: 600px;
+  }
+  .people-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    align-items: start;
+  }
+  .people-list > .employee-row {
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    background: #fff;
+    padding: 20px !important;
+    min-height: 120px;
+  }
+  .people-list > .button:not(.employee-row),
+  .people-list > .list-empty {
+    grid-column: 1/-1;
+  }
+  .person-info strong {
+    font-size: 14px;
+  }
+  .person-info > span {
+    font-size: 11px;
+  }
+  .person-tags .chip {
+    font-size: 10px;
+  }
+  .overview-screen {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    grid-template-rows: auto auto auto auto auto;
+    gap: 23px;
+    align-content: start;
+  }
+  .overview-screen > .screen-copy {
+    grid-column: 1/-1;
+  }
+  .overview-screen > .delivery-counter {
+    grid-column: 1;
+    grid-row: 2/5;
+    padding: 32px;
+  }
+  .delivery-counter > strong {
+    font-size: 80px;
+  }
+  .overview-screen > .summary-numbers {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 22px 10px;
+    background: white;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+  }
+  .summary-numbers strong {
+    font-size: 30px;
+  }
+  .summary-numbers span {
+    font-size: 11px;
+  }
+  .overview-note {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0;
+  }
+  .overview-screen > .primary-button {
+    grid-column: 2;
+    grid-row: 4;
+  }
+  .overview-screen > .share-button {
+    grid-column: 1/-1;
+    max-width: 400px;
+    justify-self: center;
+    width: 100%;
+  }
+  .account-screen {
+    max-width: 680px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .profile-card {
+    min-height: 245px;
+    padding: 30px;
+  }
+  .profile-card h2 {
+    font-size: 22px;
+  }
+  .account-option {
+    background: white;
+    min-height: 65px;
+  }
+  .admin-app .receipt strong {
+    font-size: 17px;
+  }
+}

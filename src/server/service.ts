@@ -13,7 +13,7 @@ import {
   normalizeCode,
   publicView,
   validCpf,
-  validSchedule,
+  validPickupDate,
 } from "../lib/domain";
 export class AppError extends Error {
   constructor(
@@ -174,14 +174,9 @@ export async function publicOperation(
   if (
     action === "public.request" &&
     input.mode === "schedule" &&
-    (!date ||
-      !validSchedule(
-        date,
-        process.env.PICKUP_START_DATE || "",
-        process.env.PICKUP_END_DATE || "",
-      ))
+    (!date || !validPickupDate(date))
   )
-    throw new AppError("Escolha uma data dentro do período de retirada.");
+    throw new AppError("Escolha uma data válida a partir de hoje.");
   for (let attempt = 0; attempt < 12; attempt++) {
     const code = `${SYLLABLES[randomInt(SYLLABLES.length)]}-${String(randomInt(10000)).padStart(4, "0")}`;
     try {
@@ -385,14 +380,29 @@ export async function adminOperation(
         ? normalizeName(input.query).slice(0, 160)
         : "";
     if (search && /^[\d.\-\s]+$/.test(search)) {
-      if (!validCpf(search))
-        throw new AppError(
-          "Para buscar por CPF, informe os 11 dígitos válidos.",
+      const numeric = digits(search);
+      let byEmployeeId = employees()
+        .where("employeeId", "==", numeric)
+        .orderBy(FieldPath.documentId())
+        .limit(100);
+      if (input.cursor)
+        byEmployeeId = byEmployeeId.startAfter(
+          text(input.cursor, "Cursor", 100),
         );
-      const snap = await employees().doc(employeeKey(search)).get();
+      const [matches, cpfMatch] = await Promise.all([
+        byEmployeeId.get(),
+        validCpf(numeric) && !input.cursor
+          ? employees().doc(employeeKey(numeric)).get()
+          : Promise.resolve(null),
+      ]);
+      const items = new Map(
+        matches.docs.map((doc) => [doc.id, { ...doc.data(), id: doc.id }]),
+      );
+      if (cpfMatch?.exists)
+        items.set(cpfMatch.id, { ...cpfMatch.data(), id: cpfMatch.id });
       return {
-        items: snap.exists ? [{ ...snap.data(), id: snap.id }] : [],
-        cursor: null,
+        items: [...items.values()],
+        cursor: matches.size === 100 ? matches.docs.at(-1)!.id : null,
       };
     }
     let q = search

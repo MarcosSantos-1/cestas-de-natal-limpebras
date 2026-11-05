@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@heroui/react/button";
 import { ProgressBar } from "@heroui/react/progress-bar";
 import { QRCodeSVG } from "qrcode.react";
@@ -19,9 +19,8 @@ export default function OverviewScreen({
   controller: AdminController;
   campaignLabel: string;
 }) {
-  const [url, setUrl] = useState(""),
-    [share, setShare] = useState(false);
-  useEffect(() => setUrl(window.location.origin), []);
+  const url = "https://cestas-de-natal-limpebras.vercel.app/";
+  const [share, setShare] = useState(false);
   const percent = c.stats?.total
     ? Math.round((c.stats.delivered / c.stats.total) * 100)
     : 0;
@@ -124,9 +123,7 @@ export default function OverviewScreen({
             <Download size={19} />
             Baixar QR do portal
           </Button>
-          <p className="footnote">
-            Imprima o QR gerado no endereço definitivo.
-          </p>
+          <p className="footnote">cestas-de-natal-limpebras.vercel.app</p>
         </div>
       </Sheet>
     </Screen>

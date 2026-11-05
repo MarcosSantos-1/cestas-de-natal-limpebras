@@ -6,7 +6,7 @@ A versão anterior está preservada em `legacy/`. Ela não é servida nem inclu�
 
 ## O que está implementado
 
-- Portal mobile por etapas: apresentação → identificação → escolha → código/comprovante. Cada etapa mostra somente a ação atual, sem rolagem nos tamanhos de celular testados. Em telas muito baixas ou com teclado aberto, o conteúdo pode rolar internamente para continuar acessível.
+- Portal mobile por etapas: apresentação → identificação → escolha → código/comprovante. No desktop, o RH possui sidebar e telas amplas; no celular, navegação inferior. Em telas muito baixas ou com teclado aberto, o conteúdo pode rolar internamente para continuar acessível.
 - Identidade visual com o logo oficial da Limpebras, azul escuro, verde e amarelo; animações que respeitam a preferência por movimento reduzido.
 - Campos, botões, checkbox, calendário, avisos e diálogos HeroUI. O seletor de arquivos usa o picker do sistema, acionado por botão HeroUI.
 - RH abre direto na conferência rápida. A navegação inferior leva a Pessoas, Resumo e Conta; os acessos do RH ficam dentro de Conta.
@@ -17,7 +17,8 @@ A versão anterior está preservada em `legacy/`. Ela não é servida nem inclu�
 - Uma entrega por CPF por campanha, protegida por transação. Não existe botão para apagar ou desfazer entregas.
 - Importação `.xlsx` e `.csv` com prévia e validação de nome, verificadores do CPF, duplicidades e Ativo/Inativo. Arquivos `.xls` antigos devem ser salvos como `.xlsx`.
 - Base com Nome, CPF e Matrícula, sem campo Unidade. Na importação sem Status, novos CPFs entram ativos e os status existentes são preservados. Se houver Status, ele precisa ser Ativo/Inativo e atualiza somente essa situação nos existentes. Nome, matrícula, código, agenda e entrega existentes são preservados. Ausentes da planilha não são inativados automaticamente.
-- Lista paginada, busca por início do nome ou CPF completo, exportação Excel e data da última inativação. A reativação conserva essa data; cada mudança também fica no histórico de auditoria.
+- Lista paginada, busca por início do nome, matrícula exata ou CPF completo, exportação Excel e data da última inativação. A reativação conserva essa data; cada mudança também fica no histórico de auditoria.
+- Avisos e erros são toasts temporários HeroUI, sem ocupar espaço abaixo das listas. Informações do comprovante usam texto maior e nome abreviado do conferidor; o histórico e a exportação preservam o nome completo.
 - Criação de acessos pelo RH (nome, matrícula e senha/confirmar senha), remoção de acesso sem apagar suas entregas e proteção do administrador inicial.
 - Painel com contagens da campanha e QR do portal para impressão.
 
@@ -30,18 +31,17 @@ Use o projeto **cesta-de-natal-limpebras**. O aplicativo já contém sua configu
 3. Em Configurações do projeto → Contas de serviço, obtenha uma credencial de serviço para o backend. Configure `client_email` e `private_key` nos campos abaixo. Não coloque o JSON em `public/`, no Git ou no chat. Na Vercel, salve a chave como variável Secret do servidor.
 4. Copie `.env.example` para `.env.local` e preencha:
 
-| Variável                                | Conteúdo                                                              |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| `FIREBASE_PROJECT_ID`                   | `cesta-de-natal-limpebras`                                            |
-| `FIREBASE_CLIENT_EMAIL`                 | `client_email` da credencial de serviço                               |
-| `FIREBASE_PRIVATE_KEY`                  | `private_key`, entre aspas em `.env.local`, com quebras reais ou `\n` |
-| `EMPLOYEE_LOOKUP_SECRET`                | Segredo aleatório, com pelo menos 32 caracteres                       |
-| `BOOTSTRAP_ADMIN_UID`                   | UID do seu usuário do Authentication                                  |
-| `BOOTSTRAP_ADMIN_NAME`                  | Nome completo que aparecerá nas entregas                              |
-| `BOOTSTRAP_ADMIN_EMPLOYEE_ID`           | Sua matrícula                                                         |
-| `CAMPAIGN_ID`                           | `natal-2026`, identificador estável da campanha                       |
-| `CAMPAIGN_LABEL`                        | `Natal 2026`                                                          |
-| `PICKUP_START_DATE` / `PICKUP_END_DATE` | Janela de agendamento no formato `AAAA-MM-DD`                         |
+| Variável                      | Conteúdo                                                              |
+| ----------------------------- | --------------------------------------------------------------------- |
+| `FIREBASE_PROJECT_ID`         | `cesta-de-natal-limpebras`                                            |
+| `FIREBASE_CLIENT_EMAIL`       | `client_email` da credencial de serviço                               |
+| `FIREBASE_PRIVATE_KEY`        | `private_key`, entre aspas em `.env.local`, com quebras reais ou `\n` |
+| `EMPLOYEE_LOOKUP_SECRET`      | Segredo aleatório, com pelo menos 32 caracteres                       |
+| `BOOTSTRAP_ADMIN_UID`         | UID do seu usuário do Authentication                                  |
+| `BOOTSTRAP_ADMIN_NAME`        | Nome completo que aparecerá nas entregas                              |
+| `BOOTSTRAP_ADMIN_EMPLOYEE_ID` | Sua matrícula                                                         |
+| `CAMPAIGN_ID`                 | `natal-2026`, identificador estável da campanha                       |
+| `CAMPAIGN_LABEL`              | `Natal 2026`                                                          |
 
 Para gerar o segredo:
 
@@ -75,7 +75,7 @@ npm run deploy:rules
 
 O comando tem o projeto `cesta-de-natal-limpebras` explícito e publica somente regras/índices. Elas recusam acesso direto pelo navegador; toda leitura/escrita passa pela API autorizada. Não publique essas regras sobre uma aplicação antiga em operação sem coordenar a troca: a versão antiga deixará de acessar o banco.
 
-As variáveis de rótulo e datas usadas nas páginas são lidas no build. Faça um novo deploy quando mudar a configuração. O backend usa o Admin SDK no servidor: as permissões são verificadas pela API, não pelas regras do cliente.
+O rótulo da campanha é lido no build. Faça um novo deploy quando mudar a configuração. O agendamento é livre a partir do dia atual no fuso de São Paulo e não depende de `PICKUP_START_DATE` ou `PICKUP_END_DATE`; essas variáveis antigas podem ser removidas. O backend usa o Admin SDK no servidor: as permissões são verificadas pela API, não pelas regras do cliente.
 
 ## 3. Abrir a campanha
 
@@ -84,7 +84,7 @@ As variáveis de rótulo e datas usadas nas páginas são lidas no build. Faça 
 3. CPF pode vir formatado; valores numéricos com zeros iniciais perdidos são completados e passam pela validação dos verificadores. Prefira CPF como texto no Excel.
 4. Confira a prévia e corrija todos os erros. Só então confirme. Há limite de 8 MB/30 mil linhas por arquivo; lotes de 100 são enviados ao servidor. Se houver falha parcial, corrija a conexão e reenvie: reimportar é seguro para o histórico de entrega.
 5. Crie acessos individuais para os atendentes. Todos os acessos desta versão possuem as mesmas permissões administrativas. O acesso somente de leitura para gestores ainda não foi implementado.
-6. No endereço definitivo, baixe o QR do portal em **Resumo → QR do portal público**. O QR acompanha o domínio atual; um QR gerado em localhost/Preview apontará para esse ambiente.
+6. Baixe o QR do portal em **Resumo → QR do portal público**. Ele sempre aponta para `https://cestas-de-natal-limpebras.vercel.app/`, inclusive quando gerado no localhost ou em Preview.
 7. Faça um piloto com cadastros de homologação antes de importar a base real e divulgar o cartaz.
 
 A leitura pela câmera depende de HTTPS e da permissão do navegador; a digitação manual sempre está disponível. O checkbox registra a declaração do atendente de que fez a conferência conforme o procedimento da unidade. Não captura uma assinatura digital nem armazena a folha assinada.
@@ -140,8 +140,6 @@ NEXT_PUBLIC_USE_EMULATORS=true
 EMPLOYEE_LOOKUP_SECRET=local-browser-secret-more-than-32-characters
 CAMPAIGN_ID=browser-tests
 CAMPAIGN_LABEL=Natal 2026 · teste local
-PICKUP_START_DATE=2026-12-01
-PICKUP_END_DATE=2026-12-23
 ```
 
 `tsx` não carrega `.env.local` automaticamente. Para `seed:demo`, exporte essas variáveis no terminal PowerShell (`$env:NOME='valor'`) ou use `node --env-file=.env.local --conditions=react-server --import tsx tests/seed-demo.ts`.
@@ -162,7 +160,7 @@ npm run test:browser
 npm run build
 ```
 
-Os testes de navegador usam o Chrome instalado. O fluxo modifica os dados fictícios; rode o seed novamente antes de repetir a suíte. O teste de agendamento usa 10/12/2026 e deve ser atualizado se executado após essa data.
+Os testes de navegador usam o Chrome instalado. O fluxo modifica os dados fictícios; rode o seed novamente antes de repetir a suíte. O teste de agendamento escolhe uma data dois meses à frente, sem janela fixa.
 
 Validados: entrega concorrente, código cancelado, colaborador inativo, preservação da entrega e da inativação na reimportação sem Status, autorização por UID, acesso direto negado pelas regras, criação/remoção de administrador, consulta por nome/CPF, exportação, calendário e diálogos HeroUI. A revisão de layout inclui celulares 360×640, 375×667, 390×844, 430×932 e desktop. A câmera física e a infraestrutura real ainda exigem um piloto no local da entrega.
 

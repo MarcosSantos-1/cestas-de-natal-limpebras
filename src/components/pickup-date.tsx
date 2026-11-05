@@ -5,16 +5,13 @@ import { Calendar } from "@heroui/react/calendar";
 import { Label } from "@heroui/react/label";
 import { FieldError } from "@heroui/react/field-error";
 import { parseDate } from "@internationalized/date";
+import { todayBrazil } from "@/lib/domain";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 export default function PickupDate({
-  start,
-  end,
   value,
   onChange,
   busy,
 }: {
-  start: string;
-  end: string;
   value: string;
   onChange: (v: string) => void;
   busy: boolean;
@@ -24,8 +21,7 @@ export default function PickupDate({
       className="pickup-picker"
       value={value ? parseDate(value) : null}
       onChange={(v) => onChange(v?.toString() || "")}
-      minValue={parseDate(start)}
-      maxValue={parseDate(end)}
+      minValue={parseDate(todayBrazil())}
       isRequired
       isDisabled={busy}
       shouldForceLeadingZeros
@@ -45,7 +41,7 @@ export default function PickupDate({
       <DatePicker.Popover className="calendar-popover">
         <Calendar
           aria-label="Data da retirada"
-          defaultFocusedValue={parseDate(start)}
+          defaultFocusedValue={parseDate(todayBrazil())}
         >
           <Calendar.Header>
             <Calendar.NavButton slot="previous" aria-label="Mês anterior">

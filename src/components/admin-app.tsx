@@ -31,6 +31,7 @@ import {
 import { Brand } from "./brand";
 import { Back, Feedback, Field, Screen, Sheet } from "./ui";
 import { useAdmin } from "./use-admin";
+import type { AdminTab } from "./use-admin";
 import { clientAuth } from "@/lib/firebase-client";
 import {
   Employee,
@@ -38,6 +39,7 @@ import {
   formatDateTime,
   formatDay,
   normalizeCode,
+  shortName,
 } from "@/lib/domain";
 const Scanner = dynamic(() => import("./scanner"), { ssr: false });
 const EmployeesScreen = dynamic(() => import("./employees-screen"));
@@ -211,10 +213,81 @@ export default function AdminApp({ campaignLabel }: { campaignLabel: string }) {
       </div>
     );
   const delivered = candidate?.delivery;
+  const selectTab = (id: AdminTab) => {
+    if (id === "check" && tab !== "check") nextDelivery();
+    navigate(id);
+  };
+  const navigation = (desktop = false) => (
+    <nav
+      className={desktop ? "sidebar-nav" : "bottom-nav"}
+      aria-label={desktop ? "Navegação desktop do RH" : "Navegação do RH"}
+    >
+      {tabs.map(({ id, label, icon: Icon }) => (
+        <Button
+          key={id}
+          variant="ghost"
+          className={`nav-item ${tab === id ? "selected" : ""}`}
+          onPress={() => selectTab(id)}
+          aria-current={tab === id ? "page" : undefined}
+          aria-label={
+            id === "check"
+              ? "Conferir entrega"
+              : id === "employees"
+                ? "Colaboradores"
+                : id === "overview"
+                  ? "Resumo"
+                  : "Minha conta"
+          }
+        >
+          <span className="nav-icon">
+            <Icon size={23} strokeWidth={tab === id ? 2 : 1.7} />
+          </span>
+          <span>
+            {desktop
+              ? id === "check"
+                ? "Conferir entrega"
+                : id === "employees"
+                  ? "Colaboradores"
+                  : id === "account"
+                    ? "Minha conta"
+                    : label
+              : label}
+          </span>
+        </Button>
+      ))}
+    </nav>
+  );
   return (
     <div className="app-viewport admin-app">
+      <aside className="desktop-sidebar">
+        <Brand admin />
+        <div className="sidebar-campaign">
+          <span />
+          {campaignLabel}
+        </div>
+        <p className="sidebar-label">OPERAÇÃO</p>
+        {navigation(true)}
+        <div className="sidebar-footer">
+          <ShieldCheck size={21} />
+          <p>
+            Cada entrega importa.<small>Uma cesta por colaborador.</small>
+          </p>
+        </div>
+      </aside>
       <header className="admin-header">
         <Brand admin />
+        <div className="desktop-heading">
+          <span>Portal do RH</span>
+          <strong>
+            {tab === "check"
+              ? "Conferência de entregas"
+              : tab === "employees"
+                ? "Colaboradores"
+                : tab === "overview"
+                  ? "Resumo da campanha"
+                  : "Minha conta"}
+          </strong>
+        </div>
         <Button
           variant="ghost"
           className="operator-button"
@@ -292,7 +365,7 @@ export default function AdminApp({ campaignLabel }: { campaignLabel: string }) {
                       <div>
                         <span>Conferido por</span>
                         <strong>
-                          {delivered.operatorName} (
+                          {shortName(delivered.operatorName)} (
                           {delivered.operatorEmployeeId})
                         </strong>
                       </div>
@@ -511,34 +584,7 @@ export default function AdminApp({ campaignLabel }: { campaignLabel: string }) {
           <Feedback success>{notice}</Feedback>
         ) : null}
       </main>
-      <nav className="bottom-nav" aria-label="Navegação do RH">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <Button
-            key={id}
-            variant="ghost"
-            className={`nav-item ${tab === id ? "selected" : ""}`}
-            onPress={() => {
-              if (id === "check" && tab !== "check") nextDelivery();
-              navigate(id);
-            }}
-            aria-current={tab === id ? "page" : undefined}
-            aria-label={
-              id === "check"
-                ? "Conferir entrega"
-                : id === "employees"
-                  ? "Colaboradores"
-                  : id === "overview"
-                    ? "Resumo"
-                    : "Minha conta"
-            }
-          >
-            <span className="nav-icon">
-              <Icon size={23} strokeWidth={tab === id ? 2 : 1.7} />
-            </span>
-            <span>{label}</span>
-          </Button>
-        ))}
-      </nav>
+      {navigation()}
       <Sheet open={camera} onClose={() => setCamera(false)} title="Ler QR code">
         <Scanner
           onRead={(value) => void lookup(value)}

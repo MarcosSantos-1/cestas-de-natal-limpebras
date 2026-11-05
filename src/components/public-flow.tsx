@@ -26,7 +26,7 @@ import {
   formatCpf,
   formatDateTime,
   formatDay,
-  todayBrazil,
+  shortName,
 } from "@/lib/domain";
 const PickupDate = dynamic(() => import("./pickup-date"));
 type Step =
@@ -37,15 +37,7 @@ type Step =
   | "ticket"
   | "done"
   | "inactive";
-export default function PublicFlow({
-  label,
-  start,
-  end,
-}: {
-  label: string;
-  start: string;
-  end: string;
-}) {
+export default function PublicFlow({ label }: { label: string }) {
   const [step, setStep] = useState<Step>("welcome"),
     [name, setName] = useState(""),
     [cpf, setCpf] = useState(""),
@@ -314,7 +306,7 @@ export default function PublicFlow({
                   variant="outline"
                   className="choice-card later-card"
                   onPress={() => go("schedule")}
-                  isDisabled={busy || !start || !end}
+                  isDisabled={busy}
                 >
                   <span className="choice-icon">
                     <CalendarDays size={25} />
@@ -341,7 +333,7 @@ export default function PublicFlow({
                 <p className="eyebrow">NO SEU TEMPO</p>
                 {title("Qual dia fica melhor?")}
                 <p className="screen-description">
-                  Escolha uma data de {formatDay(start)} a {formatDay(end)}.
+                  Escolha o melhor dia para você, a partir de hoje.
                 </p>
               </div>
               <Form
@@ -351,13 +343,7 @@ export default function PublicFlow({
                   void run("public.request", { mode: "schedule", date });
                 }}
               >
-                <PickupDate
-                  start={start > todayBrazil() ? start : todayBrazil()}
-                  end={end}
-                  value={date}
-                  onChange={setDate}
-                  busy={busy}
-                />
+                <PickupDate value={date} onChange={setDate} busy={busy} />
                 <div className="schedule-note">
                   <Clock3 size={19} />
                   <p>
@@ -457,7 +443,8 @@ export default function PublicFlow({
                 <div>
                   <span>Conferido por</span>
                   <strong>
-                    {delivery.operatorName} ({delivery.operatorEmployeeId})
+                    {shortName(delivery.operatorName)} (
+                    {delivery.operatorEmployeeId})
                   </strong>
                 </div>
               </div>

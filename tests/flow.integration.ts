@@ -162,6 +162,13 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     actor,
   )) as { items: Employee[] };
   assert.equal(cpfResult.items.length, 1);
+  const employeeIdResult = (await adminOperation(
+    "admin.list",
+    { query: "1001" },
+    actor,
+  )) as { items: Employee[] };
+  assert.equal(employeeIdResult.items.length, 1);
+  assert.equal(employeeIdResult.items[0].cpf, row.cpf);
   const stats = (await adminOperation("admin.stats", {}, actor)) as {
     total: number;
     delivered: number;

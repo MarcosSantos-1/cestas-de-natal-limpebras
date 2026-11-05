@@ -1,4 +1,13 @@
 import { test, expect, Page } from "@playwright/test";
+import { parseDate } from "@internationalized/date";
+import { todayBrazil, formatDay } from "../src/lib/domain";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { QRCodeSVG } from "qrcode.react";
+test.beforeEach(async ({ request }) => {
+  const response = await request.get("/");
+  expect(await response.text()).toContain("teste local");
+});
 async function begin(page: Page, name = "João da Silva", cpf = "52998224725") {
   await page.goto("/");
   await page.getByRole("button", { name: "Retirar minha cesta" }).click();
@@ -119,7 +128,7 @@ test("passos públicos e entrega pelo RH com conferência separada", async ({
   await expect(
     employee.getByRole("heading", { name: "Sua cesta foi entregue." }),
   ).toBeVisible();
-  await expect(employee.getByText("Marcos Vinicius (2550)")).toBeVisible();
+  await expect(employee.getByText("Marcos V. A. Santos (2550)")).toBeVisible();
   await fits(employee);
   await shortPhone(employee);
   await admin
@@ -145,12 +154,19 @@ test("calendário HeroUI, cancelamento em dialog e bloqueio de inativo", async (
   await page.getByRole("button", { name: "Agendar retirada" }).click();
   await page.getByRole("button", { name: "Abrir calendário" }).click();
   const calendar = page.getByRole("dialog");
-  await calendar.getByRole("button", { name: /10.*dezembro.*2026/ }).click();
+  const target = parseDate(todayBrazil()).add({ months: 2 }).set({ day: 25 });
+  await calendar.getByRole("button", { name: "Próximo mês" }).click();
+  await calendar.getByRole("button", { name: "Próximo mês" }).click();
+  await calendar
+    .getByRole("button", { name: new RegExp(`25.*${target.year}`) })
+    .click();
   await page.getByRole("button", { name: "Confirmar agendamento" }).click();
   await expect(
     page.getByText("Retirada agendada", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("10/12/2026", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(formatDay(target.toString()), { exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Cancelar pedido ou reagendar" })
     .click();
@@ -215,7 +231,79 @@ test("importação das três colunas, prévia e preservação da entrega", async
     .getByRole("button", { name: "Sim, inativar" })
     .click();
   await expect(page.getByText("Cadastro atualizado.")).toBeVisible();
+  await expect(page.locator("main .feedback")).toHaveCount(0);
+  await expect(page.locator(".toast")).toHaveCount(0, { timeout: 8500 });
   await expect(row.getByText("Inativo", { exact: true })).toBeVisible();
+});
+test("desktop com sidebar, busca por matrícula/CPF/nome e perfil longo legível", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await login(page);
+  await expect(page.locator(".desktop-sidebar")).toBeVisible();
+  await expect(page.locator(".bottom-nav")).toBeHidden();
+  await page.screenshot({ path: "test-results/admin-desktop.png" });
+  await page
+    .getByRole("button", { name: "Colaboradores", exact: true })
+    .click();
+  for (const value of ["1001", "529.982.247-25", "joao"]) {
+    await page.getByLabel("Buscar colaborador", { exact: true }).fill(value);
+    await page.getByRole("button", { name: "Buscar", exact: true }).click();
+    await expect(page.locator(".employee-row")).toHaveCount(1);
+    await expect(page.locator(".employee-row")).toContainText("João da Silva");
+  }
+  await page.screenshot({ path: "test-results/people-desktop.png" });
+  await page.getByRole("button", { name: "Minha conta", exact: true }).click();
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+    { width: 390, height: 844 },
+    { width: 360, height: 640 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect(page.locator(".profile-card h2")).toHaveText(
+      "Marcos Vinicius de Almeida dos Santos",
+    );
+    const fit = await page.locator(".profile-card").evaluate((card) => {
+      const h = card.querySelector("h2")!;
+      const c = card.getBoundingClientRect(),
+        t = h.getBoundingClientRect();
+      return (
+        t.bottom <= c.bottom &&
+        t.top >= c.top &&
+        t.right <= c.right &&
+        card.scrollHeight <= card.clientHeight + 1
+      );
+    });
+    expect(fit).toBe(true);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/profile-${viewport.width}.png`,
+    });
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.getByRole("button", { name: "Resumo", exact: true }).click();
+  await page.getByRole("button", { name: "QR do portal público" }).click();
+  const expected = renderToStaticMarkup(
+    createElement(QRCodeSVG, {
+      value: "https://cestas-de-natal-limpebras.vercel.app/",
+      size: 210,
+      marginSize: 3,
+    }),
+  );
+  const path = Array.from(expected.matchAll(/ d="([^"]+)"/g)).at(-1)?.[1];
+  expect(path).toBeTruthy();
+  await expect(page.locator(".share-code svg path").last()).toHaveAttribute(
+    "d",
+    path!,
+  );
+  await expect(page.getByRole("dialog")).toContainText(
+    "cestas-de-natal-limpebras.vercel.app",
+  );
 });
 test("acessos do RH em passos e confirmações HeroUI", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });

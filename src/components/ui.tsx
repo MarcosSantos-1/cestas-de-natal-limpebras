@@ -1,10 +1,11 @@
 "use client";
 import type { ComponentProps, ReactNode } from "react";
+import { useEffect, isValidElement } from "react";
 import { TextField } from "@heroui/react/textfield";
 import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
 import { FieldError } from "@heroui/react/field-error";
-import { Alert } from "@heroui/react/alert";
+import { toast } from "@heroui/react/toast";
 import { AlertDialog } from "@heroui/react/alert-dialog";
 import { Modal } from "@heroui/react/modal";
 import { Button } from "@heroui/react/button";
@@ -48,20 +49,32 @@ export function Feedback({
   children: ReactNode;
   success?: boolean;
 }) {
-  return (
-    <Alert
-      status={success ? "success" : "danger"}
-      role={success ? "status" : "alert"}
-      className={`feedback ${success ? "feedback-success" : "feedback-error"}`}
-    >
-      <Alert.Indicator>
-        {success ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-      </Alert.Indicator>
-      <Alert.Content>
-        <Alert.Description>{children}</Alert.Description>
-      </Alert.Content>
-    </Alert>
-  );
+  const message = notificationText(children);
+  useEffect(() => {
+    if (!message) return;
+    let cancelled = false;
+    let key: string | undefined;
+    queueMicrotask(() => {
+      if (!cancelled)
+        key = (success ? toast.success : toast.danger)(message, {
+          timeout: 5000,
+        });
+    });
+    return () => {
+      cancelled = true;
+      if (key) toast.close(key);
+    };
+  }, [message, success]);
+  return null;
+}
+function notificationText(value: ReactNode): string {
+  if (typeof value === "string" || typeof value === "number")
+    return String(value);
+  if (Array.isArray(value))
+    return value.map(notificationText).filter(Boolean).join(" ");
+  if (isValidElement<{ children?: ReactNode }>(value))
+    return notificationText(value.props.children);
+  return "";
 }
 export function Screen({
   children,

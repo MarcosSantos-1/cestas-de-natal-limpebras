@@ -33,7 +33,7 @@ async function main() {
   }
   const admin = {
     uid,
-    name: "Marcos Vinicius",
+    name: "Marcos Vinicius de Almeida dos Santos",
     employeeId: "2550",
     active: true,
   };

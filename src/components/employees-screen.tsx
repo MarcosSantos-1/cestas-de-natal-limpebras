@@ -23,6 +23,7 @@ import {
   formatDateTime,
   formatDay,
   maskCpf,
+  shortName,
 } from "@/lib/domain";
 import type { ImportPreview } from "@/lib/spreadsheet";
 export default function EmployeesScreen({
@@ -147,7 +148,7 @@ export default function EmployeesScreen({
           label="Buscar colaborador"
           value={search}
           onChange={setSearch}
-          placeholder="Nome ou CPF completo"
+          placeholder="Nome, matrícula ou CPF"
           className="search-field"
         />
         <Button
@@ -210,7 +211,7 @@ export default function EmployeesScreen({
             <h2>{c.stats?.total ? "Nenhum resultado." : "Vamos começar?"}</h2>
             <p>
               {c.stats?.total
-                ? "Busque pelo início do nome ou CPF."
+                ? "Busque pelo nome, matrícula ou CPF."
                 : "Importe a planilha de Matrícula, Nome e CPF."}
             </p>
           </div>
@@ -399,7 +400,7 @@ export default function EmployeesScreen({
                   <div>
                     <span>Conferido por</span>
                     <strong>
-                      {selected.delivery.operatorName} (
+                      {shortName(selected.delivery.operatorName)} (
                       {selected.delivery.operatorEmployeeId})
                     </strong>
                   </div>

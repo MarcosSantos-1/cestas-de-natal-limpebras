@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  shortName,
+  validPickupDate,
   validCpf,
   normalizeName,
   normalizeCode,
@@ -8,6 +10,19 @@ import {
   SYLLABLES,
   formatDateTime,
 } from "../src/lib/domain";
+test("agenda livre não depende de janela da campanha e recusa datas passadas", () => {
+  assert.equal(validPickupDate("2027-04-25", "2026-11-04"), true);
+  assert.equal(validPickupDate("2026-11-04", "2026-11-04"), true);
+  assert.equal(validPickupDate("2026-11-03", "2026-11-04"), false);
+  assert.equal(validPickupDate("2027-02-30", "2026-11-04"), false);
+});
+test("nome do conferidor preserva primeiro e último nomes e abrevia os intermediários", () => {
+  assert.equal(
+    shortName("Marcos Vinicius Silva dos Santos"),
+    "Marcos V. S. Santos",
+  );
+  assert.equal(shortName("Marcos Vinicius"), "Marcos Vinicius");
+});
 test("CPF valida os dois verificadores e recusa repetições", () => {
   assert.equal(validCpf("529.982.247-25"), true);
   assert.equal(validCpf("11111111111"), false);

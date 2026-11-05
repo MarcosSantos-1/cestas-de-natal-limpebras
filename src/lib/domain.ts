@@ -151,6 +151,19 @@ export function normalizeCode(value: string) {
     ? s.replace(/^([A-Z]{2})-?(\d{4})$/, "$1-$2")
     : "";
 }
+export function shortName(name: string) {
+  const words = name.trim().split(/\s+/);
+  if (words.length <= 2) return words.join(" ");
+  return `${words[0]} ${words
+    .slice(1, -1)
+    .filter(
+      (w) => !["de", "da", "do", "dos", "das", "e"].includes(w.toLowerCase()),
+    )
+    .map((w) => `${w[0]}.`)
+    .join(" ")} ${words.at(-1)}`.replace(/\s+/g, " ");
+}
+export const validPickupDate = (date: string, today = todayBrazil()) =>
+  validSchedule(date, today, "9999-12-31", today);
 export function publicView(e: Employee): PublicEmployee {
   return {
     name: e.name,
