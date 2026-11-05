@@ -70,20 +70,31 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     employeeId: "1001",
   };
   await importEmployees([{ ...row, active: null }], actor);
-  const noMatch = await POST(
+  const firstNameMatch = await POST(
     new NextRequest("http://localhost:3000/api/operation", {
       method: "POST",
       body: JSON.stringify({
         action: "public.lookup",
-        name: "Outra pessoa",
+        name: "João",
         cpf: row.cpf,
       }),
     }),
   );
-  assert.equal(noMatch.status, 404);
+  assert.equal(firstNameMatch.status, 200);
+  const employeeRef = campaign()
+    .collection("employees")
+    .doc(employeeKey(row.cpf));
+  assert.equal((await employeeRef.get()).data()?.lookupName, "João");
+  assert.equal(
+    (await publicOperation("public.lookup", { ...row, name: "Nome incorreto" }))
+      .name,
+    "Nome incorreto",
+  );
+  assert.equal((await employeeRef.get()).data()?.lookupName, "Nome incorreto");
   const identity = { name: row.name, cpf: row.cpf };
   const requested = await publicOperation("public.request", {
     ...identity,
+    name: "João",
     mode: "now",
   });
   assert.match(requested.code!, /^[A-Z]{2}-\d{4}$/);
@@ -106,8 +117,8 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
   assert.equal(scheduled.scheduledDate, "2099-12-10");
   assert.notEqual(scheduled.code, requested.code);
   await adminOperation(
-    "admin.status",
-    { id: employeeKey(row.cpf), active: false },
+    "admin.inactivateEmployees",
+    { ids: [employeeKey(row.cpf)] },
     actor,
   );
   await assert.rejects(
@@ -129,6 +140,16 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
   assert.equal(delivered.delivery?.operatorName, "Marcos Vinicius");
   assert.equal(delivered.delivery?.operatorEmployeeId, "2550");
   assert.equal(delivered.delivery?.operatorUid, "");
+  await adminOperation(
+    "admin.inactivateEmployees",
+    { ids: [employeeKey(row.cpf)] },
+    actor,
+  );
+  assert.equal((await employeeRef.get()).data()?.active, false);
+  assert.equal(
+    (await employeeRef.get()).data()?.delivery?.at,
+    delivered.delivery?.at,
+  );
   await assert.rejects(
     publicOperation("public.cancel", identity),
     /já foi entregue/,

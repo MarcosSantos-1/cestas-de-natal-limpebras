@@ -16,6 +16,7 @@ export type Employee = {
   id: string;
   name: string;
   cpf: string;
+  lookupName?: string;
   employeeId: string;
   active: boolean;
   inactivatedAt: string | null;

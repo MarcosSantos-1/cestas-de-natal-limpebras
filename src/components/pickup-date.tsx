@@ -1,11 +1,10 @@
 "use client";
-import { DatePicker } from "@heroui/react/date-picker";
-import { DateField } from "@heroui/react/date-field";
+import { Button } from "@heroui/react/button";
+import { Popover } from "@heroui/react/popover";
+import { useState } from "react";
 import { Calendar } from "@heroui/react/calendar";
-import { Label } from "@heroui/react/label";
-import { FieldError } from "@heroui/react/field-error";
 import { parseDate } from "@internationalized/date";
-import { todayBrazil } from "@/lib/domain";
+import { formatDay, todayBrazil } from "@/lib/domain";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 export default function PickupDate({
   value,
@@ -16,52 +15,60 @@ export default function PickupDate({
   onChange: (v: string) => void;
   busy: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const minimum = parseDate(todayBrazil());
+
   return (
-    <DatePicker
-      className="pickup-picker"
-      value={value ? parseDate(value) : null}
-      onChange={(v) => onChange(v?.toString() || "")}
-      minValue={parseDate(todayBrazil())}
-      isRequired
-      isDisabled={busy}
-      shouldForceLeadingZeros
-    >
-      <Label>Data da retirada</Label>
-      <DateField.Group>
-        <DateField.Input>
-          {(segment) => <DateField.Segment segment={segment} />}
-        </DateField.Input>
-        <DateField.Suffix>
-          <DatePicker.Trigger aria-label="Abrir calendário">
-            <CalendarDays size={21} />
-          </DatePicker.Trigger>
-        </DateField.Suffix>
-      </DateField.Group>
-      <FieldError />
-      <DatePicker.Popover className="calendar-popover">
-        <Calendar
-          aria-label="Data da retirada"
-          defaultFocusedValue={parseDate(todayBrazil())}
+    <div className="pickup-picker">
+      <span className="label">Data da retirada</span>
+      <Popover isOpen={open} onOpenChange={setOpen}>
+        <Button
+          type="button"
+          variant="outline"
+          className="pickup-date-trigger"
+          aria-label={
+            value
+              ? `Data da retirada: ${formatDay(value)}`
+              : "Escolher data da retirada"
+          }
+          isDisabled={busy}
         >
-          <Calendar.Header>
-            <Calendar.NavButton slot="previous" aria-label="Mês anterior">
-              <ChevronLeft size={19} />
-            </Calendar.NavButton>
-            <Calendar.Heading />
-            <Calendar.NavButton slot="next" aria-label="Próximo mês">
-              <ChevronRight size={19} />
-            </Calendar.NavButton>
-          </Calendar.Header>
-          <Calendar.Grid>
-            <Calendar.GridHeader>
-              {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
-            </Calendar.GridHeader>
-            <Calendar.GridBody>
-              {(date) => <Calendar.Cell date={date} />}
-            </Calendar.GridBody>
-          </Calendar.Grid>
-        </Calendar>
-      </DatePicker.Popover>
-    </DatePicker>
+          <span>{value ? formatDay(value) : "Escolher data"}</span>
+          <CalendarDays size={21} />
+        </Button>
+        <Popover.Content className="calendar-popover">
+          <Popover.Dialog aria-label="Escolher data da retirada">
+            <Calendar
+              aria-label="Data da retirada"
+              value={value ? parseDate(value) : null}
+              minValue={minimum}
+              defaultFocusedValue={value ? parseDate(value) : minimum}
+              onChange={(date) => {
+                onChange(date.toString());
+                setOpen(false);
+              }}
+            >
+              <Calendar.Header>
+                <Calendar.NavButton slot="previous" aria-label="Mês anterior">
+                  <ChevronLeft size={19} />
+                </Calendar.NavButton>
+                <Calendar.Heading />
+                <Calendar.NavButton slot="next" aria-label="Próximo mês">
+                  <ChevronRight size={19} />
+                </Calendar.NavButton>
+              </Calendar.Header>
+              <Calendar.Grid>
+                <Calendar.GridHeader>
+                  {(day) => <Calendar.HeaderCell>{day}</Calendar.HeaderCell>}
+                </Calendar.GridHeader>
+                <Calendar.GridBody>
+                  {(date) => <Calendar.Cell date={date} />}
+                </Calendar.GridBody>
+              </Calendar.Grid>
+            </Calendar>
+          </Popover.Dialog>
+        </Popover.Content>
+      </Popover>
+    </div>
   );
 }

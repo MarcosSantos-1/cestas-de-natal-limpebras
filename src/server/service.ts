@@ -150,9 +150,9 @@ async function identity(input: Record<string, unknown>) {
   if (!validCpf(cpf)) throw new AppError("Confira o CPF informado.");
   const ref = employees().doc(employeeKey(cpf)),
     snap = await ref.get();
-  if (!snap.exists || normalizeName(snap.data()!.name) !== normalizeName(name))
+  if (!snap.exists)
     throw new AppError(
-      "Dados não encontrados. Confira nome e CPF ou procure o RH.",
+      "Cadastro não encontrado. Confira o CPF ou procure o RH.",
       404,
     );
   return { ref, employee: { ...snap.data(), id: snap.id } as Employee, name };
@@ -162,7 +162,25 @@ export async function publicOperation(
   input: Record<string, unknown>,
 ) {
   const { ref, employee, name } = await identity(input);
-  if (action === "public.lookup") return publicView(employee);
+  if (action === "public.lookup") {
+    if (
+      input.refresh !== true &&
+      normalizeName(employee.name) !== normalizeName(name) &&
+      employee.lookupName !== name
+    ) {
+      await database().runTransaction(async (tx) => {
+        const current = (await tx.get(ref)).data() as Employee | undefined;
+        if (
+          current &&
+          normalizeName(current.name) !== normalizeName(name) &&
+          current.lookupName !== name
+        ) {
+          tx.update(ref, { lookupName: name });
+        }
+      });
+    }
+    return publicView({ ...employee, name });
+  }
   if (!["public.request", "public.cancel"].includes(action))
     throw new AppError("Operação inválida.");
   const date = typeof input.date === "string" ? input.date : null;
@@ -183,8 +201,9 @@ export async function publicOperation(
       return await database().runTransaction(async (tx) => {
         const snap = await tx.get(ref),
           e = { ...snap.data(), id: snap.id } as Employee;
-        if (!snap.exists || normalizeName(e.name) !== normalizeName(name))
+        if (!snap.exists)
           throw new AppError("Cadastro alterado. Consulte novamente.", 409);
+        const view = { ...e, name };
         if (e.delivery)
           throw new AppError(
             "Esta cesta já foi entregue. Consulte novamente.",
@@ -211,9 +230,9 @@ export async function publicOperation(
             actor: "public",
             at,
           });
-          return publicView({ ...e, code: null, scheduledDate: null });
+          return publicView({ ...view, code: null, scheduledDate: null });
         }
-        if (e.code) return publicView(e);
+        if (e.code) return publicView(view);
         const codeRef = campaign().collection("codes").doc(code);
         if ((await tx.get(codeRef)).exists)
           throw new AppError("CODE_COLLISION", 409);
@@ -233,7 +252,7 @@ export async function publicOperation(
           scheduledDate,
           at,
         });
-        return publicView({ ...e, code, scheduledDate });
+        return publicView({ ...view, code, scheduledDate });
       });
     } catch (error) {
       if (error instanceof AppError && error.message === "CODE_COLLISION")
@@ -542,28 +561,39 @@ export async function adminOperation(
       pendingAdjustment: settings.data()?.pendingAdjustment ?? 0,
     };
   }
-  if (action === "admin.status") {
-    const ref = employees().doc(text(input.id, "Cadastro", 100));
-    if (typeof input.active !== "boolean")
-      throw new AppError("Status inválido.");
+  if (action === "admin.status" || action === "admin.inactivateEmployees") {
+    const bulk = action === "admin.inactivateEmployees";
+    const ids = bulk ? input.ids : [input.id];
+    const active = bulk ? false : input.active;
+    if (!Array.isArray(ids) || !ids.length || ids.length > 100)
+      throw new AppError("Selecione de 1 a 100 colaboradores.");
+    if (typeof active !== "boolean") throw new AppError("Status inválido.");
+    const refs = [...new Set(ids.map((id) => text(id, "Cadastro", 100)))].map(
+      (id) => employees().doc(id),
+    );
     return database().runTransaction(async (tx) => {
-      const snap = await tx.get(ref);
-      if (!snap.exists) throw new AppError("Cadastro não encontrado.", 404);
-      const before = snap.data()!,
-        at = now();
-      tx.update(ref, {
-        active: input.active,
-        inactivatedAt: input.active ? before.inactivatedAt : at,
-        updatedAt: at,
-      });
-      tx.create(
-        campaign().collection("audit").doc(),
-        audit(actor, "employee.status", snap.id, at, {
-          before: before.active,
-          after: input.active,
-        }),
-      );
-      return { ok: true };
+      const snapshots = await tx.getAll(...refs);
+      const at = now();
+      let changed = 0;
+      for (const snap of snapshots) {
+        const before = snap.data();
+        if (!before) throw new AppError("Cadastro não encontrado.", 404);
+        if (before.active === active) continue;
+        tx.update(snap.ref, {
+          active,
+          ...(active ? {} : { inactivatedAt: at }),
+          updatedAt: at,
+        });
+        tx.create(
+          campaign().collection("audit").doc(),
+          audit(actor, "employee.status", snap.id, at, {
+            before: before.active,
+            after: active,
+          }),
+        );
+        changed++;
+      }
+      return { ok: true, changed };
     });
   }
   if (action === "admin.admins") {

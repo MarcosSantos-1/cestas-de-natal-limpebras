@@ -89,7 +89,7 @@ export default function PublicFlow({ label }: { label: string }) {
     const poll = () => {
       if (document.visibilityState !== "visible") return;
       const request = generation.current;
-      void api<PublicEmployee>("public.lookup", { name, cpf })
+      void api<PublicEmployee>("public.lookup", { name, cpf, refresh: true })
         .then((e) => {
           if (active && request === generation.current) show(e);
         })
@@ -202,7 +202,7 @@ export default function PublicFlow({ label }: { label: string }) {
                 <p className="eyebrow">VAMOS COMEÇAR</p>
                 {title("Primeiro, quem é você?")}
                 <p className="screen-description">
-                  Informe os dados cadastrados no RH.
+                  Informe seu CPF e pelo menos o primeiro nome.
                 </p>
               </div>
               <Form
@@ -212,18 +212,6 @@ export default function PublicFlow({ label }: { label: string }) {
                   void run("public.lookup");
                 }}
               >
-                <Field
-                  label="Nome completo"
-                  name="name"
-                  value={name}
-                  onChange={setName}
-                  autoComplete="name"
-                  placeholder="Seu nome completo"
-                  isRequired
-                  minLength={3}
-                  maxLength={160}
-                  isDisabled={busy}
-                />
                 <Field
                   label="CPF"
                   name="cpf"
@@ -235,6 +223,17 @@ export default function PublicFlow({ label }: { label: string }) {
                   isRequired
                   minLength={14}
                   maxLength={14}
+                  isDisabled={busy}
+                />
+                <Field
+                  label="Nome"
+                  name="name"
+                  value={name}
+                  onChange={setName}
+                  autoComplete="name"
+                  placeholder="Seu nome ou primeiro nome"
+                  isRequired
+                  maxLength={160}
                   isDisabled={busy}
                 />
                 {error ? <Feedback>{error}</Feedback> : null}

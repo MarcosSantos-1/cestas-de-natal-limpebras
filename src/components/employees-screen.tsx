@@ -4,6 +4,7 @@ import { FileTrigger } from "react-aria-components";
 import { Button } from "@heroui/react/button";
 import { Form } from "@heroui/react/form";
 import { Chip } from "@heroui/react/chip";
+import { Checkbox } from "@heroui/react/checkbox";
 import { ProgressBar } from "@heroui/react/progress-bar";
 import {
   ArrowRight,
@@ -24,6 +25,7 @@ import {
   formatDateTime,
   formatDay,
   maskCpf,
+  normalizeName,
   shortName,
 } from "@/lib/domain";
 import type { ImportPreview } from "@/lib/spreadsheet";
@@ -41,7 +43,10 @@ export default function EmployeesScreen({
     [confirmStatus, setConfirmStatus] = useState(false),
     [createOpen, setCreateOpen] = useState(false),
     [newCpf, setNewCpf] = useState(""),
-    [confirmReverse, setConfirmReverse] = useState(false);
+    [confirmReverse, setConfirmReverse] = useState(false),
+    [bulkMode, setBulkMode] = useState(false),
+    [bulkIds, setBulkIds] = useState<string[]>([]),
+    [confirmBulk, setConfirmBulk] = useState(false);
   async function readFile(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
@@ -152,6 +157,17 @@ export default function EmployeesScreen({
           <Download size={18} />
           Exportar Excel
         </Button>
+        <Button
+          className="desktop-selection"
+          variant="outline"
+          isDisabled={c.busy}
+          onPress={() => {
+            setBulkMode(!bulkMode);
+            setBulkIds([]);
+          }}
+        >
+          {bulkMode ? "Cancelar seleção" : "Selecionar"}
+        </Button>
       </div>
       <Form
         className="people-search"
@@ -177,49 +193,81 @@ export default function EmployeesScreen({
           <Search size={21} />
         </Button>
       </Form>
+      {bulkMode ? (
+        <Button
+          className="desktop-selection"
+          variant="danger"
+          isDisabled={c.busy || !bulkIds.length}
+          onPress={() => setConfirmBulk(true)}
+        >
+          Inativar selecionados ({bulkIds.length}/100)
+        </Button>
+      ) : null}
       <div className="people-list" aria-label="Colaboradores">
         {c.rows.map((e) => (
-          <Button
-            key={e.id}
-            variant="ghost"
-            className="employee-row"
-            onPress={() => setSelected(e)}
-          >
-            <span className="person-circle">
-              {e.name
-                .split(" ")
-                .map((s) => s[0])
-                .slice(0, 2)
-                .join("")}
-            </span>
-            <span className="person-info">
-              <strong>{e.name}</strong>
-              <span>
-                Mat. {e.employeeId || "—"} · {maskCpf(e.cpf)}
+          <div key={e.id} className="employee-list-item">
+            {bulkMode && e.active ? (
+              <Checkbox
+                className="desktop-selection employee-selection"
+                aria-label={`Selecionar ${e.name}, matrícula ${e.employeeId}`}
+                isSelected={bulkIds.includes(e.id)}
+                isDisabled={
+                  c.busy || (bulkIds.length >= 100 && !bulkIds.includes(e.id))
+                }
+                onChange={(checked) =>
+                  setBulkIds((ids) =>
+                    checked ? [...ids, e.id] : ids.filter((id) => id !== e.id),
+                  )
+                }
+              >
+                <Checkbox.Content>
+                  <Checkbox.Control>
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                </Checkbox.Content>
+              </Checkbox>
+            ) : null}
+            <Button
+              variant="ghost"
+              className="employee-row"
+              onPress={() => setSelected(e)}
+            >
+              <span className="person-circle">
+                {e.name
+                  .split(" ")
+                  .map((s) => s[0])
+                  .slice(0, 2)
+                  .join("")}
               </span>
-              <span className="person-tags">
-                <Chip
-                  size="sm"
-                  className={e.active ? "plain-chip" : "danger-chip"}
-                >
-                  {e.active ? "Ativo" : "Inativo"}
-                </Chip>
-                <Chip
-                  size="sm"
-                  className={e.delivery ? "solid-chip" : "code-chip"}
-                >
-                  {e.delivery
-                    ? "Entregue"
-                    : e.scheduledDate
-                      ? "Agendada"
-                      : e.code
-                        ? "Código gerado"
-                        : "Pendente"}
-                </Chip>
+              <span className="person-info">
+                <strong>{e.name}</strong>
+                <span>
+                  Mat. {e.employeeId || "—"} · {maskCpf(e.cpf)}
+                </span>
+                <span className="person-tags">
+                  <Chip
+                    size="sm"
+                    className={e.active ? "plain-chip" : "danger-chip"}
+                  >
+                    {e.active ? "Ativo" : "Inativo"}
+                  </Chip>
+                  <Chip
+                    size="sm"
+                    className={e.delivery ? "solid-chip" : "code-chip"}
+                  >
+                    {e.delivery
+                      ? "Entregue"
+                      : e.scheduledDate
+                        ? "Agendada"
+                        : e.code
+                          ? "Código gerado"
+                          : "Pendente"}
+                  </Chip>
+                </span>
               </span>
-            </span>
-            <ChevronRight size={19} />
-          </Button>
+              <ChevronRight size={19} />
+            </Button>
+          </div>
         ))}
         {!c.rows.length ? (
           <div className="list-empty">
@@ -444,6 +492,14 @@ export default function EmployeesScreen({
                 <span>Matrícula</span>
                 <strong>{selected.employeeId}</strong>
               </div>
+              {selected.lookupName &&
+              normalizeName(selected.lookupName) !==
+                normalizeName(selected.name) ? (
+                <div>
+                  <span>Último nome divergente na consulta</span>
+                  <strong>{selected.lookupName}</strong>
+                </div>
+              ) : null}
               <div>
                 <span>Cadastro</span>
                 <strong>{selected.active ? "Ativo" : "Inativo"}</strong>
@@ -506,6 +562,32 @@ export default function EmployeesScreen({
           </div>
         ) : null}
       </Sheet>
+      <Confirm
+        open={confirmBulk}
+        onClose={() => setConfirmBulk(false)}
+        title={`Inativar ${bulkIds.length} cadastro(s)?`}
+        confirmLabel="Sim, inativar"
+        danger
+        busy={c.busy}
+        onConfirm={() =>
+          void c.task(async () => {
+            const { changed } = await c.call<{ changed: number }>(
+              "admin.inactivateEmployees",
+              { ids: bulkIds },
+            );
+            setConfirmBulk(false);
+            setBulkMode(false);
+            setBulkIds([]);
+            await Promise.all([c.loadEmployees(c.query), c.refresh()]);
+            c.setNotice(`${changed} cadastro(s) inativado(s).`);
+          })
+        }
+      >
+        <p>
+          As retiradas serão bloqueadas. Entregas já registradas ficam no
+          histórico.
+        </p>
+      </Confirm>
       <Confirm
         open={confirmReverse}
         onClose={() => setConfirmReverse(false)}

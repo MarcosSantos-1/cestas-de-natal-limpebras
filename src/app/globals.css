@@ -653,15 +653,15 @@ a:focus-visible {
   gap: 9px;
   margin-top: 5px;
 }
-.pickup-picker .date-input-group {
+.pickup-picker .pickup-date-trigger {
   height: 56px;
+  justify-content: space-between;
+  padding-inline: 16px;
+  font-size: 17px;
   border: 1.5px solid #dce3ed;
   background: white;
   border-radius: 13px;
   box-shadow: none;
-}
-.pickup-picker .date-input-group__input {
-  font-size: 17px;
 }
 .calendar-popover {
   z-index: 100;
@@ -1394,6 +1394,13 @@ a:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 5px;
+}
+.people-screen .desktop-selection {
+  display: none;
+}
+.employee-list-item {
+  min-width: 0;
+  position: relative;
 }
 .employee-row {
   min-height: 105px;
@@ -2653,7 +2660,18 @@ a:focus-visible {
     gap: 24px;
   }
   .people-actions {
-    max-width: 440px;
+    max-width: 600px;
+  }
+  .people-screen .desktop-selection {
+    display: inline-flex;
+    align-self: flex-start;
+  }
+  .employee-selection {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 18px;
+    transform: translateY(-50%);
   }
   .people-search {
     max-width: 600px;
@@ -2664,12 +2682,15 @@ a:focus-visible {
     gap: 14px;
     align-items: start;
   }
-  .people-list > .employee-row {
+  .employee-list-item > .employee-row {
     border: 1px solid var(--line);
     border-radius: 15px;
     background: #fff;
     padding: 20px !important;
     min-height: 120px;
+  }
+  .employee-selection + .employee-row {
+    padding-inline-start: 54px !important;
   }
   .people-list > .button:not(.employee-row),
   .people-list > .list-empty {
