@@ -15,10 +15,10 @@ async function begin(page: Page, name = "João da Silva", cpf = "52998224725") {
   await page.getByLabel("CPF", { exact: true }).fill(cpf);
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
 }
-async function login(page: Page) {
+async function login(page: Page, password = "TesteLocal123!") {
   await page.goto("/admin");
   await page.getByLabel("E-mail ou matrícula").fill("rh@example.test");
-  await page.getByLabel("Senha", { exact: true }).fill("TesteLocal123!");
+  await page.getByLabel("Senha", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Entrar no painel" }).click();
   await expect(
     page.getByRole("heading", { name: "Vamos entregar um bom Natal." }),
@@ -312,6 +312,9 @@ test("acessos do RH em passos e confirmações HeroUI", async ({ page }) => {
   await page
     .getByRole("button", { name: "Acessos do RH", exact: true })
     .click();
+  await expect(
+    page.getByText("rh@example.test", { exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Adicionar administrador" }).click();
   await page
     .getByLabel("Nome completo", { exact: true })
@@ -332,6 +335,9 @@ test("acessos do RH em passos e confirmações HeroUI", async ({ page }) => {
     .getByRole("button", { name: "Remover acesso", exact: true })
     .click();
   await expect(page.getByText("Mat. 98765 · Inativo")).toBeVisible();
+  await expect(
+    page.getByText("98765@rh.cestas.limpebras.local", { exact: true }),
+  ).toBeVisible();
 });
 test("welcome e identificação cabem sem scroll em tamanhos de celular", async ({
   page,
@@ -360,4 +366,71 @@ test("welcome e identificação cabem sem scroll em tamanhos de celular", async 
     page.getByRole("heading", { name: "Pronto para a próxima entrega?" }),
   ).toBeVisible();
   await page.screenshot({ path: "test-results/admin-login.png" });
+});
+test("administrador altera a própria senha com confirmação e entra novamente", async ({
+  page,
+  request,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page.getByRole("button", { name: "Minha conta", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Alterar minha senha", exact: true })
+    .click();
+  await page
+    .getByLabel("Senha atual", { exact: true })
+    .fill("SenhaIncorreta123!");
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await page
+    .getByLabel("Nova senha", { exact: true })
+    .fill("SenhaNovaTeste456!");
+  await page
+    .getByLabel("Confirmar nova senha", { exact: true })
+    .fill("NaoConfere123!");
+  await page.getByRole("button", { name: "Salvar nova senha" }).click();
+  await expect(
+    page.getByText("As novas senhas não conferem.", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Confirmar nova senha", { exact: true })
+    .fill("SenhaNovaTeste456!");
+  await page.getByRole("button", { name: "Salvar nova senha" }).click();
+  await expect(
+    page.getByText("A senha atual está incorreta.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Voltar à senha atual" }).click();
+  await page.getByLabel("Senha atual", { exact: true }).fill("TesteLocal123!");
+  await page.getByRole("button", { name: "Continuar", exact: true }).click();
+  await page.getByRole("button", { name: "Salvar nova senha" }).click();
+  await expect(
+    page.getByText("Senha alterada com sucesso.", { exact: false }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Minha conta", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Acessos do RH", exact: true })
+    .click();
+  await expect(
+    page.getByText("rh@example.test", { exact: true }),
+  ).toBeVisible();
+  const oldLogin = await request.post(
+    "http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=fake",
+    {
+      data: {
+        email: "rh@example.test",
+        password: "TesteLocal123!",
+        returnSecureToken: true,
+      },
+    },
+  );
+  expect(oldLogin.status()).toBe(400);
+  await page.getByRole("button", { name: "Voltar", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Sair da conta", exact: true })
+    .click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: "Sair", exact: true })
+    .click();
+  await expect(page.getByLabel("E-mail ou matrícula")).toBeVisible();
+  await login(page, "SenhaNovaTeste456!");
 });

@@ -20,6 +20,8 @@ A versão anterior está preservada em `legacy/`. Ela não é servida nem inclu�
 - Lista paginada, busca por início do nome, matrícula exata ou CPF completo, exportação Excel e data da última inativação. A reativação conserva essa data; cada mudança também fica no histórico de auditoria.
 - Avisos e erros são toasts temporários HeroUI, sem ocupar espaço abaixo das listas. Informações do comprovante usam texto maior e nome abreviado do conferidor; o histórico e a exportação preservam o nome completo.
 - Criação de acessos pelo RH (nome, matrícula e senha/confirmar senha), remoção de acesso sem apagar suas entregas e proteção do administrador inicial.
+- Em **Conta → Alterar minha senha**, o administrador informa a senha atual, a nova senha e sua confirmação. O Firebase reautentica a conta antes da troca; a nova senha tem de 10 a 128 caracteres. Senhas não são gravadas no Firestore nem enviadas à API do projeto.
+- **Acessos do RH** mostra o e-mail atual do Firebase Authentication abaixo do nome, incluindo contas antigas. Para acessos criados por matrícula, é exibido o endereço técnico usado no login interno.
 - Painel com contagens da campanha e QR do portal para impressão.
 
 ## 1. Preparar o Firebase real

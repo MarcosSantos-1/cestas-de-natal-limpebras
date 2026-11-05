@@ -485,7 +485,22 @@ export async function adminOperation(
   }
   if (action === "admin.admins") {
     const snap = await database().collection("admins").get();
-    return snap.docs.map((d) => ({ ...d.data(), uid: d.id }));
+    // Authentication é a fonte do e-mail, inclusive para administradores antigos.
+    const emailByUid = new Map<string, string | null>();
+    for (let offset = 0; offset < snap.docs.length; offset += 100) {
+      const result = await authentication().getUsers(
+        snap.docs.slice(offset, offset + 100).map((doc) => ({ uid: doc.id })),
+      );
+      for (const user of result.users)
+        emailByUid.set(user.uid, user.email || null);
+    }
+    return snap.docs.map((d) => ({
+      uid: d.id,
+      name: d.data().name,
+      employeeId: d.data().employeeId,
+      active: d.data().active,
+      email: emailByUid.get(d.id) || null,
+    }));
   }
   if (action === "admin.createAdmin") {
     const name = text(input.name, "Nome"),

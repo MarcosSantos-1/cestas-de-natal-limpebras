@@ -20,6 +20,7 @@ async function main() {
   }
   if (process.env.CAMPAIGN_ID !== "browser-tests")
     throw new Error("Seed reservado à campanha browser-tests.");
+  await authentication().updateUser(uid, { password: "TesteLocal123!" });
   await database().recursiveDelete(campaign());
   try {
     const fixture = await authentication().getUserByEmail(

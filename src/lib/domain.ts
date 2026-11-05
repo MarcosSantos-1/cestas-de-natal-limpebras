@@ -3,6 +3,7 @@ export type Admin = {
   name: string;
   employeeId: string;
   active: boolean;
+  email?: string | null;
 };
 export type Delivery = {
   at: string;

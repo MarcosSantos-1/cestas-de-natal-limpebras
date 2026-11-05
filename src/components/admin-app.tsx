@@ -227,6 +227,7 @@ export default function AdminApp({ campaignLabel }: { campaignLabel: string }) {
           key={id}
           variant="ghost"
           className={`nav-item ${tab === id ? "selected" : ""}`}
+          isDisabled={busy}
           onPress={() => selectTab(id)}
           aria-current={tab === id ? "page" : undefined}
           aria-label={
@@ -291,6 +292,7 @@ export default function AdminApp({ campaignLabel }: { campaignLabel: string }) {
         <Button
           variant="ghost"
           className="operator-button"
+          isDisabled={busy}
           onPress={() => navigate("account")}
           aria-label={`Conta de ${admin.name}`}
         >

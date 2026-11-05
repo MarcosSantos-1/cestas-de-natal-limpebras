@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@heroui/react/button";
 import { Form } from "@heroui/react/form";
 import { Link } from "@heroui/react/link";
@@ -11,10 +12,12 @@ import {
   ShieldCheck,
   Users,
   UserRound,
+  KeyRound,
 } from "lucide-react";
 import { Back, Confirm, Feedback, Field, Screen, Sheet } from "./ui";
 import type { AdminController } from "./use-admin";
 import type { Admin } from "@/lib/domain";
+const PasswordSheet = dynamic(() => import("./password-sheet"));
 export default function AccountScreen({
   controller: c,
 }: {
@@ -30,7 +33,8 @@ export default function AccountScreen({
     [confirmPassword, setConfirmPassword] = useState(""),
     [remove, setRemove] = useState<Admin | null>(null),
     [formError, setFormError] = useState(""),
-    [exit, setExit] = useState(false);
+    [exit, setExit] = useState(false),
+    [changePassword, setChangePassword] = useState(false);
   async function loadAdmins() {
     setView("accesses");
     await c.task(async () => setAdmins(await c.call<Admin[]>("admin.admins")));
@@ -98,6 +102,15 @@ export default function AccountScreen({
             <span>Acessos do RH</span>
             <ChevronRight size={20} />
           </Button>
+          <Button
+            variant="outline"
+            className="account-option"
+            onPress={() => setChangePassword(true)}
+          >
+            <KeyRound size={22} />
+            <span>Alterar minha senha</span>
+            <ChevronRight size={20} />
+          </Button>
           <Link href="/" className="account-option">
             <UserRound size={22} />
             <span>Portal do colaborador</span>
@@ -149,6 +162,9 @@ export default function AccountScreen({
                 </span>
                 <span>
                   <strong>{a.name}</strong>
+                  <small className="admin-email">
+                    {a.email || "E-mail não disponível"}
+                  </small>
                   <small>
                     Mat. {a.employeeId} · {a.active ? "Ativo" : "Inativo"}
                   </small>
@@ -172,6 +188,15 @@ export default function AccountScreen({
           </div>
         </>
       )}
+      <PasswordSheet
+        open={changePassword}
+        onClose={() => setChangePassword(false)}
+        onSuccess={() =>
+          c.setNotice(
+            "Senha alterada com sucesso. No próximo acesso, use a nova senha.",
+          )
+        }
+      />
       <Sheet
         open={create}
         onClose={() => {

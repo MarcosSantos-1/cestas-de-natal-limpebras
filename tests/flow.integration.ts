@@ -191,6 +191,12 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     actor,
   )) as Admin;
   assert.ok(child.uid);
+  const accesses = (await adminOperation("admin.admins", {}, actor)) as Admin[];
+  assert.equal(accesses.find((a) => a.uid === user.uid)?.email, user.email);
+  assert.equal(
+    accesses.find((a) => a.uid === child.uid)?.email,
+    "8888@rh.cestas.limpebras.local",
+  );
   await adminOperation("admin.disableAdmin", { uid: child.uid }, actor);
   assert.equal(
     (await database().collection("admins").doc(child.uid).get()).data()?.active,

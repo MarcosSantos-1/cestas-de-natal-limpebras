@@ -1577,6 +1577,16 @@ a:focus-visible {
 .account-screen {
   gap: 23px;
 }
+.access-person .admin-email {
+  color: var(--navy);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.access-person > span:nth-child(2) {
+  overflow-wrap: anywhere;
+}
 .profile-card {
   background: var(--navy);
   color: #fff;
