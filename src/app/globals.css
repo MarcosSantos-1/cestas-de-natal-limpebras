@@ -304,34 +304,6 @@ a:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.step-indicator {
-  display: flex;
-  gap: 5px;
-  flex: 1;
-  max-width: 120px;
-  margin-left: auto;
-}
-.step-indicator > span {
-  display: block;
-  flex: 1;
-  height: 3px;
-  border-radius: 5px;
-  background: #e5eaf1;
-  transition: background 0.25s;
-}
-.step-indicator > span.filled {
-  background: var(--green);
-}
-.step-counter {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-}
-.step-counter > span {
-  color: #a1adbd;
-  font-weight: 400;
-  margin-left: 2px;
-}
 .step-screen {
   display: flex;
   flex: 1;

@@ -115,14 +115,6 @@ export default function PublicFlow({ label }: { label: string }) {
     setBusy(false);
     go("welcome");
   }
-  const stepNumber =
-    step === "welcome"
-      ? 0
-      : step === "identity"
-        ? 1
-        : step === "choice" || step === "schedule"
-          ? 2
-          : 3;
   const delivery = employee?.delivery;
   const title = (text: string) => (
     <h1 ref={heading} tabIndex={-1}>
@@ -152,18 +144,6 @@ export default function PublicFlow({ label }: { label: string }) {
               <span className="campaign-name">{label}</span>
             )}
           </div>
-          <div
-            className="step-indicator"
-            aria-label={`Etapa ${stepNumber + 1} de 4`}
-          >
-            {[0, 1, 2, 3].map((i) => (
-              <span key={i} className={i <= stepNumber ? "filled" : ""} />
-            ))}
-          </div>
-          <span className="step-counter">
-            0{stepNumber + 1}
-            <span>/04</span>
-          </span>
         </div>
         <Screen
           id={step}
