@@ -1580,8 +1580,9 @@ a:focus-visible {
   height: 140px;
   border: 1px solid #ffffff15;
   border-radius: 50%;
-  top: -80px;
-  right: -40px;
+  top: 0;
+  right: 0;
+  pointer-events: none;
 }
 .large-avatar {
   width: 64px;
