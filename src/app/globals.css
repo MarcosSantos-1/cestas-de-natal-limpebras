@@ -1352,6 +1352,20 @@ a:focus-visible {
   justify-content: center;
   padding: 0 13px;
 }
+.people-actions > .add-person-button {
+  flex: 0 0 46px;
+}
+.summary-numbers .pending-count-button {
+  flex-direction: column;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px;
+}
+.pending-count-button span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
 .people-search {
   display: flex !important;
   gap: 9px;

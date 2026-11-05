@@ -314,12 +314,25 @@ export function validateImport(raw: unknown): ImportRow[] {
     };
   });
 }
-export async function importEmployees(raw: unknown, actor: Admin) {
+export async function importEmployees(
+  raw: unknown,
+  actor: Admin,
+  createOnly = false,
+) {
   const rows = validateImport(raw);
   return database().runTransaction(async (tx) => {
     const refs = rows.map((row) => employees().doc(employeeKey(row.cpf))),
       snaps = await tx.getAll(...refs),
       at = now();
+    if (createOnly) {
+      if (snaps[0].exists)
+        throw new AppError("Já existe um colaborador com esse CPF.", 409);
+      const duplicate = await tx.get(
+        employees().where("employeeId", "==", rows[0].employeeId).limit(1),
+      );
+      if (!duplicate.empty)
+        throw new AppError("Já existe um colaborador com essa matrícula.", 409);
+    }
     let added = 0,
       changed = 0;
     rows.forEach((row, i) => {
@@ -374,6 +387,74 @@ export async function adminOperation(
   if (action === "admin.lookup") return lookupCode(input.code);
   if (action === "admin.deliver") return deliver(input.code, actor);
   if (action === "admin.import") return importEmployees(input.rows, actor);
+  if (action === "admin.createEmployee") {
+    return importEmployees(
+      [
+        {
+          name: input.name,
+          cpf: input.cpf,
+          employeeId: text(input.employeeId, "Matrícula", 30),
+          active: true,
+        },
+      ],
+      actor,
+      true,
+    );
+  }
+  if (action === "admin.reverseDelivery") {
+    const ref = employees().doc(text(input.id, "Cadastro", 100));
+    const expectedAt = text(input.deliveredAt, "Data da entrega", 40);
+    return database().runTransaction(async (tx) => {
+      const current = (await tx.get(ref)).data() as Employee | undefined;
+      if (!current) throw new AppError("Cadastro não encontrado.", 404);
+      if (!current.delivery || current.delivery.at !== expectedAt) {
+        throw new AppError(
+          "A entrega mudou. Atualize o cadastro antes de continuar.",
+          409,
+        );
+      }
+      const at = now();
+      tx.update(ref, { delivery: null, delivered: false, updatedAt: at });
+      tx.create(
+        campaign().collection("audit").doc(),
+        audit(actor, "delivery.reverse", ref.id, at, {
+          previousDelivery: current.delivery,
+        }),
+      );
+      return { ok: true };
+    });
+  }
+  if (action === "admin.setPendingCount") {
+    const count = input.count;
+    if (
+      count !== null &&
+      (typeof count !== "number" || !Number.isSafeInteger(count) || count < 0)
+    ) {
+      throw new AppError(
+        "Informe uma quantidade inteira maior ou igual a zero.",
+      );
+    }
+    return database().runTransaction(async (tx) => {
+      const [settings, total, delivered] = await Promise.all([
+        tx.get(campaign()),
+        tx.get(employees().count()),
+        tx.get(employees().where("delivered", "==", true).count()),
+      ]);
+      const calculated = total.data().count - delivered.data().count;
+      const adjustment = count === null ? 0 : count - calculated;
+      const at = now();
+      tx.set(campaign(), { pendingAdjustment: adjustment }, { merge: true });
+      tx.create(
+        campaign().collection("audit").doc(),
+        audit(actor, "summary.pending.adjust", campaign().id, at, {
+          previousAdjustment: settings.data()?.pendingAdjustment ?? 0,
+          adjustment,
+          calculated,
+        }),
+      );
+      return { ok: true };
+    });
+  }
   if (action === "admin.list") {
     const search =
       typeof input.query === "string"
@@ -446,17 +527,19 @@ export async function adminOperation(
     };
   }
   if (action === "admin.stats") {
-    const [total, active, delivered, scheduled] = await Promise.all([
+    const [total, active, delivered, scheduled, settings] = await Promise.all([
       employees().count().get(),
       employees().where("active", "==", true).count().get(),
       employees().where("delivered", "==", true).count().get(),
       employees().where("hasSchedule", "==", true).count().get(),
+      campaign().get(),
     ]);
     return {
       total: total.data().count,
       active: active.data().count,
       delivered: delivered.data().count,
       scheduled: scheduled.data().count,
+      pendingAdjustment: settings.data()?.pendingAdjustment ?? 0,
     };
   }
   if (action === "admin.status") {

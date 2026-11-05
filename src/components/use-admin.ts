@@ -10,6 +10,7 @@ export type Stats = {
   active: number;
   delivered: number;
   scheduled: number;
+  pendingAdjustment: number;
 };
 export type ListResult = { items: Employee[]; cursor: string | null };
 export type AdminTab = "check" | "employees" | "overview" | "account";

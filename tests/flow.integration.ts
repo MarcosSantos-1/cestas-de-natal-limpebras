@@ -180,6 +180,57 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     .where("action", "==", "delivery.confirm")
     .get();
   assert.equal(audit.size, 1);
+  await adminOperation("admin.setPendingCount", { count: 7 }, actor);
+  const adjusted = (await adminOperation("admin.stats", {}, actor)) as {
+    pendingAdjustment: number;
+    delivered: number;
+  };
+  assert.equal(adjusted.pendingAdjustment, 7);
+  assert.equal(adjusted.delivered, 1);
+  await adminOperation("admin.setPendingCount", { count: null }, actor);
+  const automatic = (await adminOperation("admin.stats", {}, actor)) as {
+    pendingAdjustment: number;
+  };
+  assert.equal(automatic.pendingAdjustment, 0);
+  const newEmployee = {
+    name: "Colaborador Manual",
+    employeeId: "0077",
+    cpf: "11144477735",
+  };
+  await adminOperation("admin.createEmployee", newEmployee, actor);
+  await assert.rejects(
+    adminOperation("admin.createEmployee", newEmployee, actor),
+    /CPF/,
+  );
+  await assert.rejects(
+    adminOperation(
+      "admin.createEmployee",
+      { ...newEmployee, cpf: "39053344705" },
+      actor,
+    ),
+    /matrícula/,
+  );
+  await assert.rejects(
+    adminOperation(
+      "admin.reverseDelivery",
+      { id: employeeKey(row.cpf), deliveredAt: "2000-01-01T00:00:00.000Z" },
+      actor,
+    ),
+    /entrega mudou/,
+  );
+  await adminOperation(
+    "admin.reverseDelivery",
+    { id: employeeKey(row.cpf), deliveredAt: preserved.delivery!.at },
+    actor,
+  );
+  const reopened = await publicOperation("public.lookup", identity);
+  assert.equal(reopened.delivery, null);
+  assert.equal(reopened.code, scheduled.code);
+  const reversals = await campaign()
+    .collection("audit")
+    .where("action", "==", "delivery.reverse")
+    .get();
+  assert.equal(reversals.docs[0].data().previousDelivery.code, scheduled.code);
   const child = (await adminOperation(
     "admin.createAdmin",
     {

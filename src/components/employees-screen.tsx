@@ -11,6 +11,7 @@ import {
   ChevronRight,
   Download,
   FileSpreadsheet,
+  Plus,
   Search,
   Upload,
   Users,
@@ -37,7 +38,10 @@ export default function EmployeesScreen({
     [progress, setProgress] = useState(0),
     [importError, setImportError] = useState(""),
     [selected, setSelected] = useState<Employee | null>(null),
-    [confirmStatus, setConfirmStatus] = useState(false);
+    [confirmStatus, setConfirmStatus] = useState(false),
+    [createOpen, setCreateOpen] = useState(false),
+    [newCpf, setNewCpf] = useState(""),
+    [confirmReverse, setConfirmReverse] = useState(false);
   async function readFile(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
@@ -116,6 +120,18 @@ export default function EmployeesScreen({
         </p>
       </div>
       <div className="people-actions">
+        <Button
+          className="add-person-button"
+          isIconOnly
+          aria-label="Adicionar colaborador"
+          isDisabled={c.busy}
+          onPress={() => {
+            setNewCpf("");
+            setCreateOpen(true);
+          }}
+        >
+          <Plus size={22} />
+        </Button>
         <Button
           className="primary-button"
           onPress={() => {
@@ -353,6 +369,65 @@ export default function EmployeesScreen({
         </div>
       </Sheet>
       <Sheet
+        open={createOpen}
+        onClose={() => !c.busy && setCreateOpen(false)}
+        title="Adicionar colaborador"
+      >
+        {createOpen ? (
+          <Form
+            className="access-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const fields = new FormData(event.currentTarget);
+              void c.task(async () => {
+                await c.call("admin.createEmployee", {
+                  name: fields.get("name"),
+                  employeeId: fields.get("employeeId"),
+                  cpf: newCpf,
+                });
+                setCreateOpen(false);
+                setSearch(newCpf);
+                await Promise.all([c.loadEmployees(newCpf), c.refresh()]);
+                c.setNotice("Colaborador adicionado.");
+              });
+            }}
+          >
+            <Field
+              label="Nome completo"
+              name="name"
+              isRequired
+              maxLength={160}
+              isDisabled={c.busy}
+            />
+            <Field
+              label="Matrícula"
+              name="employeeId"
+              isRequired
+              maxLength={30}
+              isDisabled={c.busy}
+            />
+            <Field
+              label="CPF"
+              name="cpf"
+              value={newCpf}
+              onChange={(value) => setNewCpf(formatCpf(value))}
+              isRequired
+              inputMode="numeric"
+              minLength={14}
+              isDisabled={c.busy}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              className="primary-button"
+              isDisabled={c.busy}
+            >
+              Adicionar colaborador
+            </Button>
+          </Form>
+        ) : null}
+      </Sheet>
+      <Sheet
         open={!!selected}
         onClose={() => setSelected(null)}
         title="Colaborador"
@@ -407,6 +482,16 @@ export default function EmployeesScreen({
                 </>
               ) : null}
             </div>
+            {selected.delivery ? (
+              <Button
+                fullWidth
+                variant="outline"
+                onPress={() => setConfirmReverse(true)}
+                isDisabled={c.busy}
+              >
+                Reverter entrega
+              </Button>
+            ) : null}
             <Button
               fullWidth
               variant={selected.active ? "danger" : "primary"}
@@ -421,6 +506,32 @@ export default function EmployeesScreen({
           </div>
         ) : null}
       </Sheet>
+      <Confirm
+        open={confirmReverse}
+        onClose={() => setConfirmReverse(false)}
+        title="Reverter entrega?"
+        confirmLabel="Sim, reverter entrega"
+        danger
+        busy={c.busy}
+        onConfirm={() =>
+          void c.task(async () => {
+            if (!selected?.delivery) return;
+            await c.call("admin.reverseDelivery", {
+              id: selected.id,
+              deliveredAt: selected.delivery.at,
+            });
+            setConfirmReverse(false);
+            setSelected(null);
+            await Promise.all([c.loadEmployees(search), c.refresh()]);
+            c.setNotice("Entrega revertida. O histórico foi preservado.");
+          })
+        }
+      >
+        <p>
+          {selected?.name} voltará a aparecer como não entregue. A entrega
+          anterior ficará no histórico.
+        </p>
+      </Confirm>
       <Confirm
         open={confirmStatus}
         onClose={() => setConfirmStatus(false)}
