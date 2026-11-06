@@ -29,6 +29,7 @@ export default function AccountScreen({
     [createStep, setCreateStep] = useState(0),
     [name, setName] = useState(""),
     [employeeId, setEmployeeId] = useState(""),
+    [email, setEmail] = useState(""),
     [password, setPassword] = useState(""),
     [confirmPassword, setConfirmPassword] = useState(""),
     [remove, setRemove] = useState<Admin | null>(null),
@@ -50,6 +51,7 @@ export default function AccountScreen({
         await c.call("admin.createAdmin", {
           name,
           employeeId,
+          email,
           password,
           confirmPassword,
         });
@@ -57,10 +59,11 @@ export default function AccountScreen({
         setCreate(false);
         setName("");
         setEmployeeId("");
+        setEmail("");
         setPassword("");
         setConfirmPassword("");
         setCreateStep(0);
-        c.setNotice("Acesso criado. A pessoa entra com matrícula e senha.");
+        c.setNotice("Acesso criado. A pessoa entra com e-mail e senha.");
       } catch (e) {
         setFormError((e as Error).message);
       }
@@ -234,7 +237,15 @@ export default function AccountScreen({
                 isRequired
                 pattern="[0-9]{1,20}"
                 inputMode="numeric"
-                placeholder="Ex.: 2550"
+              />
+              <Field
+                label="E-mail"
+                name="email"
+                type="email"
+                value={email}
+                onChange={setEmail}
+                isRequired
+                maxLength={254}
               />
             </>
           ) : (

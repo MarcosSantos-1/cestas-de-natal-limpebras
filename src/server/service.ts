@@ -600,9 +600,12 @@ export async function adminOperation(
   }
   if (action === "admin.createAdmin") {
     const name = text(input.name, "Nome"),
-      employeeId = text(input.employeeId, "Matrícula", 30);
+      employeeId = text(input.employeeId, "Matrícula", 30),
+      email = text(input.email, "E-mail", 254).toLowerCase();
     if (!/^\d{1,20}$/.test(employeeId))
       throw new AppError("A matrícula deve conter apenas números.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      throw new AppError("Informe um e-mail válido.");
     if (
       typeof input.password !== "string" ||
       input.password.length < 10 ||
@@ -614,35 +617,42 @@ export async function adminOperation(
     let user;
     try {
       user = await authentication().createUser({
-        email: `${employeeId}@rh.cestas.limpebras.local`,
+        email,
         password: input.password,
         displayName: name,
       });
     } catch (error) {
-      if ((error as { code?: string }).code === "auth/email-already-exists")
-        throw new AppError("Já existe um acesso para esta matrícula.", 409);
+      const code = (error as { code?: string }).code;
+      if (code === "auth/email-already-exists")
+        throw new AppError("Já existe um acesso para este e-mail.", 409);
+      if (code === "auth/invalid-email")
+        throw new AppError("Informe um e-mail válido.");
       throw error;
     }
     try {
-      const batch = database().batch(),
+      const admins = database().collection("admins"),
+        sameEmployeeId = admins.where("employeeId", "==", employeeId).limit(1),
         at = now();
-      batch.create(database().collection("admins").doc(user.uid), {
-        name,
-        employeeId,
-        active: true,
-        createdAt: at,
-        createdBy: actor.uid,
+      await database().runTransaction(async (tx) => {
+        if (!(await tx.get(sameEmployeeId)).empty)
+          throw new AppError("Já existe um acesso para esta matrícula.", 409);
+        tx.create(admins.doc(user.uid), {
+          name,
+          employeeId,
+          active: true,
+          createdAt: at,
+          createdBy: actor.uid,
+        });
+        tx.create(
+          campaign().collection("audit").doc(),
+          audit(actor, "admin.create", user.uid, at),
+        );
       });
-      batch.create(
-        campaign().collection("audit").doc(),
-        audit(actor, "admin.create", user.uid, at),
-      );
-      await batch.commit();
     } catch (error) {
       await authentication().deleteUser(user.uid);
       throw error;
     }
-    return { uid: user.uid, name, employeeId, active: true };
+    return { uid: user.uid, name, employeeId, email: user.email, active: true };
   }
   if (action === "admin.disableAdmin") {
     const uid = text(input.uid, "Acesso", 128);

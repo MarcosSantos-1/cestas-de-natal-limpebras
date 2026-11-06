@@ -19,7 +19,7 @@ A versão anterior está preservada em `legacy/`. Ela não é servida nem inclu�
 - Base com Nome, CPF e Matrícula, sem campo Unidade. Na importação sem Status, novos CPFs entram ativos e os status existentes são preservados. Se houver Status, ele precisa ser Ativo/Inativo e atualiza somente essa situação nos existentes. Nome, matrícula, código, agenda e entrega existentes são preservados. Ausentes da planilha não são inativados automaticamente.
 - Lista paginada, busca por início do nome, matrícula exata ou CPF completo, exportação Excel e data da última inativação. A reativação conserva essa data; cada mudança também fica no histórico de auditoria.
 - Avisos e erros são toasts temporários HeroUI, sem ocupar espaço abaixo das listas. Informações do comprovante usam texto maior e nome abreviado do conferidor; o histórico e a exportação preservam o nome completo.
-- Criação de acessos pelo RH (nome, matrícula e senha/confirmar senha), remoção de acesso sem apagar suas entregas e proteção do administrador inicial.
+- Criação de acessos pelo RH (nome, matrícula, e-mail e senha/confirmar senha), remoção de acesso sem apagar suas entregas e proteção do administrador inicial.
 - Em **Conta → Alterar minha senha**, o administrador informa a senha atual, a nova senha e sua confirmação. O Firebase reautentica a conta antes da troca; a nova senha tem de 10 a 128 caracteres. Senhas não são gravadas no Firestore nem enviadas à API do projeto.
 - **Acessos do RH** mostra o e-mail atual do Firebase Authentication abaixo do nome, incluindo contas antigas. Para acessos criados por matrícula, é exibido o endereço técnico usado no login interno.
 - Painel com contagens da campanha e QR do portal para impressão.
@@ -53,7 +53,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 Guarde esse segredo junto da configuração da campanha. Ele gera os identificadores por CPF usando HMAC; alterá-lo após importar a base faria os cadastros antigos deixarem de ser localizados. Uma troca exige migração planejada.
 
-Somente o UID configurado pode inicializar o primeiro administrador. Outros usuários criados diretamente no Authentication não recebem acesso ao RH. Os administradores seguintes são criados no painel e entram pela matrícula; internamente, o Authentication usa um endereço técnico, sem envio de e-mail. O primeiro usuário entra pelo e-mail real criado no console.
+Somente o UID configurado pode inicializar o primeiro administrador. Outros usuários criados diretamente no Authentication não recebem acesso ao RH. Os administradores criados no painel entram com o e-mail informado no cadastro e a senha. Contas antigas criadas com endereço técnico continuam entrando pela matrícula. O primeiro usuário entra pelo e-mail cadastrado no console.
 
 ## 2. Rodar e publicar
 

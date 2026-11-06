@@ -322,7 +322,12 @@ test("acessos do RH em passos e confirmações HeroUI", async ({ page }) => {
   await page
     .getByLabel("Nome completo", { exact: true })
     .fill("Conferente de Teste");
-  await page.getByLabel("Matrícula", { exact: true }).fill("98765");
+  const employeeId = page.getByLabel("Matrícula", { exact: true });
+  expect(await employeeId.getAttribute("placeholder")).toBeNull();
+  await employeeId.fill("98765");
+  await page
+    .getByLabel("E-mail", { exact: true })
+    .fill("conferente@example.test");
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
   await page.getByLabel("Senha", { exact: true }).fill("Password12345!");
   await page.getByLabel("Confirmar senha").fill("Password12345!");
@@ -339,7 +344,7 @@ test("acessos do RH em passos e confirmações HeroUI", async ({ page }) => {
     .click();
   await expect(page.getByText("Mat. 98765 · Inativo")).toBeVisible();
   await expect(
-    page.getByText("98765@rh.cestas.limpebras.local", { exact: true }),
+    page.getByText("conferente@example.test", { exact: true }),
   ).toBeVisible();
 });
 test("welcome e identificação cabem sem scroll em tamanhos de celular", async ({

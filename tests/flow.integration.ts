@@ -262,23 +262,58 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     .where("action", "==", "delivery.reverse")
     .get();
   assert.equal(reversals.docs[0].data().previousDelivery.code, scheduled.code);
+  const childInput = {
+    name: "Maria Conferente",
+    employeeId: "8888",
+    password: "TestPassword123!",
+    confirmPassword: "TestPassword123!",
+  };
+  await assert.rejects(
+    adminOperation("admin.createAdmin", childInput, actor),
+    /E-mail inválido/,
+  );
+  await assert.rejects(
+    adminOperation(
+      "admin.createAdmin",
+      { ...childInput, email: "maria" },
+      actor,
+    ),
+    /Informe um e-mail válido/,
+  );
+  const childEmail = `conferente-${Date.now()}@example.test`;
   const child = (await adminOperation(
     "admin.createAdmin",
-    {
-      name: "Maria Conferente",
-      employeeId: "8888",
-      password: "TestPassword123!",
-      confirmPassword: "TestPassword123!",
-    },
+    { ...childInput, email: `  ${childEmail.toUpperCase()}  ` },
     actor,
   )) as Admin;
   assert.ok(child.uid);
+  assert.equal(
+    (await authentication().getUserByEmail(childEmail)).uid,
+    child.uid,
+  );
+  await assert.rejects(
+    adminOperation(
+      "admin.createAdmin",
+      { ...childInput, employeeId: "8889", email: childEmail },
+      actor,
+    ),
+    /Já existe um acesso para este e-mail/,
+  );
+  const duplicateIdEmail = `outro-${childEmail}`;
+  await assert.rejects(
+    adminOperation(
+      "admin.createAdmin",
+      { ...childInput, email: duplicateIdEmail },
+      actor,
+    ),
+    /Já existe um acesso para esta matrícula/,
+  );
+  await assert.rejects(authentication().getUserByEmail(duplicateIdEmail), {
+    code: "auth/user-not-found",
+  });
   const accesses = (await adminOperation("admin.admins", {}, actor)) as Admin[];
   assert.equal(accesses.find((a) => a.uid === user.uid)?.email, user.email);
-  assert.equal(
-    accesses.find((a) => a.uid === child.uid)?.email,
-    "8888@rh.cestas.limpebras.local",
-  );
+  assert.equal(accesses.find((a) => a.uid === child.uid)?.email, childEmail);
   await adminOperation("admin.disableAdmin", { uid: child.uid }, actor);
   assert.equal(
     (await database().collection("admins").doc(child.uid).get()).data()?.active,

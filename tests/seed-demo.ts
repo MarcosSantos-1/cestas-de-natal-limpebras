@@ -24,7 +24,7 @@ async function main() {
   await database().recursiveDelete(campaign());
   try {
     const fixture = await authentication().getUserByEmail(
-      "98765@rh.cestas.limpebras.local",
+      "conferente@example.test",
     );
     await database().collection("admins").doc(fixture.uid).delete();
     await authentication().deleteUser(fixture.uid);
