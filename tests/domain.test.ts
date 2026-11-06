@@ -4,6 +4,7 @@ import {
   shortName,
   validPickupDate,
   validCpf,
+  matchesFullName,
   normalizeName,
   normalizeCode,
   validSchedule,
@@ -32,6 +33,22 @@ test("CPF valida os dois verificadores e recusa repetições", () => {
 test("nome é normalizado sem remover partes", () => {
   assert.equal(normalizeName("  JOÃO   da Silva "), "joao da silva");
   assert.notEqual(normalizeName("João Silva"), normalizeName("João da Silva"));
+});
+test("consulta tolera variações de escrita e exige todos os nomes e sobrenomes", () => {
+  const registeredName = "João-Pedro dos Santos D’Ávila Júnior";
+  assert.ok(
+    matchesFullName("  JOAO  PEDRO SANTOS D'AVILA JUNIOR ", registeredName),
+  );
+  for (const name of [
+    "João",
+    "João Pedro Júnior",
+    "João Pedro Santos Dávila",
+    "João P. Santos Dávila Júnior",
+    "João Pedro Dávila Santos Júnior",
+    "João Pedro Santo Dávila Júnior",
+  ]) {
+    assert.equal(matchesFullName(name, registeredName), false, name);
+  }
 });
 test("códigos e QR são normalizados sem aceitar dados extras", () => {
   assert.equal(normalizeCode("cesta:la-0025"), "LA-0025");

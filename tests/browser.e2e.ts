@@ -11,7 +11,7 @@ test.beforeEach(async ({ request }) => {
 async function begin(page: Page, name = "João da Silva", cpf = "52998224725") {
   await page.goto("/");
   await page.getByRole("button", { name: "Retirar minha cesta" }).click();
-  await page.getByLabel("Nome", { exact: true }).fill(name);
+  await page.getByLabel("Nome completo", { exact: true }).fill(name);
   await page.getByLabel("CPF", { exact: true }).fill(cpf);
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
 }
@@ -73,7 +73,9 @@ test("passos públicos e entrega pelo RH com conferência separada", async ({
   await expect(employee.getByLabel("CPF", { exact: true })).toHaveCount(0);
   await employee.screenshot({ path: "test-results/welcome-mobile.png" });
   await employee.getByRole("button", { name: "Retirar minha cesta" }).click();
-  await employee.getByLabel("Nome", { exact: true }).fill("João da Silva");
+  await employee
+    .getByLabel("Nome completo", { exact: true })
+    .fill("JOAO SILVA");
   await employee.getByLabel("CPF", { exact: true }).fill("52998224725");
   await fits(employee);
   await employee.screenshot({ path: "test-results/identity-mobile.png" });
@@ -148,7 +150,7 @@ test("calendário HeroUI, cancelamento em dialog e bloqueio de inativo", async (
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await begin(page, "Maria", "11144477735");
+  await begin(page, "Maria de Souza", "11144477735");
   await page.getByRole("button", { name: "Agendar retirada" }).click();
   await page.getByRole("button", { name: "Escolher data da retirada" }).click();
   const calendar = page.getByRole("dialog");

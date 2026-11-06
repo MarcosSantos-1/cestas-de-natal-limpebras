@@ -89,7 +89,7 @@ export default function PublicFlow({ label }: { label: string }) {
     const poll = () => {
       if (document.visibilityState !== "visible") return;
       const request = generation.current;
-      void api<PublicEmployee>("public.lookup", { name, cpf, refresh: true })
+      void api<PublicEmployee>("public.lookup", { name, cpf })
         .then((e) => {
           if (active && request === generation.current) show(e);
         })
@@ -202,7 +202,7 @@ export default function PublicFlow({ label }: { label: string }) {
                 <p className="eyebrow">VAMOS COMEÇAR</p>
                 {title("Primeiro, quem é você?")}
                 <p className="screen-description">
-                  Informe seu CPF e pelo menos o primeiro nome.
+                  Informe seu CPF e seu nome completo.
                 </p>
               </div>
               <Form
@@ -226,12 +226,12 @@ export default function PublicFlow({ label }: { label: string }) {
                   isDisabled={busy}
                 />
                 <Field
-                  label="Nome"
+                  label="Nome completo"
                   name="name"
                   value={name}
                   onChange={setName}
                   autoComplete="name"
-                  placeholder="Seu nome ou primeiro nome"
+                  placeholder="Seu nome completo"
                   isRequired
                   maxLength={160}
                   isDisabled={busy}

@@ -70,7 +70,11 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     employeeId: "1001",
   };
   await importEmployees([{ ...row, active: null }], actor);
-  const firstNameMatch = await POST(
+  const employeeRef = campaign()
+    .collection("employees")
+    .doc(employeeKey(row.cpf));
+  await employeeRef.update({ lookupName: "João" });
+  const firstNameOnly = await POST(
     new NextRequest("http://localhost:3000/api/operation", {
       method: "POST",
       body: JSON.stringify({
@@ -80,21 +84,23 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
       }),
     }),
   );
-  assert.equal(firstNameMatch.status, 200);
-  const employeeRef = campaign()
-    .collection("employees")
-    .doc(employeeKey(row.cpf));
-  assert.equal((await employeeRef.get()).data()?.lookupName, "João");
+  assert.equal(firstNameOnly.status, 404);
+  const identity = { name: "  JOAO   SILVA  ", cpf: row.cpf };
   assert.equal(
-    (await publicOperation("public.lookup", { ...row, name: "Nome incorreto" }))
-      .name,
-    "Nome incorreto",
+    (await publicOperation("public.lookup", identity)).name,
+    row.name,
   );
-  assert.equal((await employeeRef.get()).data()?.lookupName, "Nome incorreto");
-  const identity = { name: row.name, cpf: row.cpf };
+  assert.equal((await employeeRef.get()).data()?.lookupName, "João");
+  await assert.rejects(
+    publicOperation("public.request", {
+      ...identity,
+      name: "João",
+      mode: "now",
+    }),
+    /Confira seu CPF e nome completo/,
+  );
   const requested = await publicOperation("public.request", {
     ...identity,
-    name: "João",
     mode: "now",
   });
   assert.match(requested.code!, /^[A-Z]{2}-\d{4}$/);
@@ -104,6 +110,10 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     mode: "now",
   });
   assert.equal(repeated.code, requested.code);
+  await assert.rejects(
+    publicOperation("public.cancel", { ...identity, name: "Nome incorreto" }),
+    /Confira seu CPF e nome completo/,
+  );
   await publicOperation("public.cancel", identity);
   await assert.rejects(
     adminOperation("admin.lookup", { code: requested.code }, actor),

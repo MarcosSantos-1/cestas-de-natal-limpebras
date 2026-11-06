@@ -16,7 +16,6 @@ export type Employee = {
   id: string;
   name: string;
   cpf: string;
-  lookupName?: string;
   employeeId: string;
   active: boolean;
   inactivatedAt: string | null;
@@ -95,6 +94,22 @@ export const normalizeName = (s: string) =>
     .toLowerCase()
     .trim()
     .replace(/\s+/g, " ");
+const nameParticles = new Set(["da", "das", "de", "do", "dos", "e"]);
+function normalizeFullName(name: string) {
+  return normalizeName(name)
+    .replace(/['’]/g, "")
+    .split(/[\s\p{Pd}]+/u)
+    .filter(Boolean)
+    .filter(
+      (part, index, parts) =>
+        index === 0 || index === parts.length - 1 || !nameParticles.has(part),
+    )
+    .join(" ");
+}
+export function matchesFullName(input: string, registeredName: string) {
+  const name = normalizeFullName(input);
+  return name !== "" && name === normalizeFullName(registeredName);
+}
 export const digits = (s: string) => s.replace(/\D/g, "");
 export function validCpf(value: string) {
   const cpf = digits(value);

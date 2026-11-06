@@ -9,6 +9,7 @@ import {
   ImportRow,
   SYLLABLES,
   digits,
+  matchesFullName,
   normalizeName,
   normalizeCode,
   publicView,
@@ -146,41 +147,24 @@ export async function verifyAppCheck(token: string | null) {
 }
 async function identity(input: Record<string, unknown>) {
   const cpf = digits(text(input.cpf, "CPF", 20)),
-    name = text(input.name, "Nome");
+    name = text(input.name, "Nome completo");
   if (!validCpf(cpf)) throw new AppError("Confira o CPF informado.");
   const ref = employees().doc(employeeKey(cpf)),
     snap = await ref.get();
-  if (!snap.exists)
+  const data = snap.data();
+  if (!data || !matchesFullName(name, data.name))
     throw new AppError(
-      "Cadastro não encontrado. Confira o CPF ou procure o RH.",
+      "Confira seu CPF e nome completo. Se os dados estiverem corretos, procure o RH.",
       404,
     );
-  return { ref, employee: { ...snap.data(), id: snap.id } as Employee, name };
+  return { ref, employee: { ...data, id: snap.id } as Employee, name };
 }
 export async function publicOperation(
   action: string,
   input: Record<string, unknown>,
 ) {
   const { ref, employee, name } = await identity(input);
-  if (action === "public.lookup") {
-    if (
-      input.refresh !== true &&
-      normalizeName(employee.name) !== normalizeName(name) &&
-      employee.lookupName !== name
-    ) {
-      await database().runTransaction(async (tx) => {
-        const current = (await tx.get(ref)).data() as Employee | undefined;
-        if (
-          current &&
-          normalizeName(current.name) !== normalizeName(name) &&
-          current.lookupName !== name
-        ) {
-          tx.update(ref, { lookupName: name });
-        }
-      });
-    }
-    return publicView({ ...employee, name });
-  }
+  if (action === "public.lookup") return publicView(employee);
   if (!["public.request", "public.cancel"].includes(action))
     throw new AppError("Operação inválida.");
   const date = typeof input.date === "string" ? input.date : null;
@@ -201,9 +185,8 @@ export async function publicOperation(
       return await database().runTransaction(async (tx) => {
         const snap = await tx.get(ref),
           e = { ...snap.data(), id: snap.id } as Employee;
-        if (!snap.exists)
+        if (!snap.exists || !matchesFullName(name, e.name))
           throw new AppError("Cadastro alterado. Consulte novamente.", 409);
-        const view = { ...e, name };
         if (e.delivery)
           throw new AppError(
             "Esta cesta já foi entregue. Consulte novamente.",
@@ -230,9 +213,9 @@ export async function publicOperation(
             actor: "public",
             at,
           });
-          return publicView({ ...view, code: null, scheduledDate: null });
+          return publicView({ ...e, code: null, scheduledDate: null });
         }
-        if (e.code) return publicView(view);
+        if (e.code) return publicView(e);
         const codeRef = campaign().collection("codes").doc(code);
         if ((await tx.get(codeRef)).exists)
           throw new AppError("CODE_COLLISION", 409);
@@ -252,7 +235,7 @@ export async function publicOperation(
           scheduledDate,
           at,
         });
-        return publicView({ ...view, code, scheduledDate });
+        return publicView({ ...e, code, scheduledDate });
       });
     } catch (error) {
       if (error instanceof AppError && error.message === "CODE_COLLISION")

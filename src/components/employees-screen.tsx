@@ -25,7 +25,6 @@ import {
   formatDateTime,
   formatDay,
   maskCpf,
-  normalizeName,
   shortName,
 } from "@/lib/domain";
 import type { ImportPreview } from "@/lib/spreadsheet";
@@ -492,14 +491,6 @@ export default function EmployeesScreen({
                 <span>Matrícula</span>
                 <strong>{selected.employeeId}</strong>
               </div>
-              {selected.lookupName &&
-              normalizeName(selected.lookupName) !==
-                normalizeName(selected.name) ? (
-                <div>
-                  <span>Último nome divergente na consulta</span>
-                  <strong>{selected.lookupName}</strong>
-                </div>
-              ) : null}
               <div>
                 <span>Cadastro</span>
                 <strong>{selected.active ? "Ativo" : "Inativo"}</strong>
