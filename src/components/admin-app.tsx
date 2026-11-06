@@ -35,6 +35,7 @@ import type { AdminTab } from "./use-admin";
 import { clientAuth } from "@/lib/firebase-client";
 import {
   Employee,
+  formatCodeInput,
   formatCpf,
   formatDateTime,
   formatDay,
@@ -535,10 +536,13 @@ export default function AdminApp({ campaignLabel }: { campaignLabel: string }) {
                         label="Ou digite o código"
                         name="code"
                         value={code}
-                        onChange={(v) => setCode(v.toUpperCase())}
+                        onChange={(value) => {
+                          const formatted =
+                            normalizeCode(value) || formatCodeInput(value);
+                          if (formatted !== null) setCode(formatted);
+                        }}
                         placeholder="LA-0025"
                         autoComplete="off"
-                        maxLength={16}
                         isRequired
                         isDisabled={busy}
                         className="code-field"

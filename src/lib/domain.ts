@@ -168,6 +168,11 @@ export function normalizeCode(value: string) {
     ? s.replace(/^([A-Z]{2})-?(\d{4})$/, "$1-$2")
     : "";
 }
+export function formatCodeInput(value: string) {
+  const code = value.toUpperCase().replace(/[\s-]/g, "");
+  if (!/^(?:[A-Z]{0,2}|[A-Z]{2}\d{1,4})$/.test(code)) return null;
+  return code.replace(/^([A-Z]{2})(\d)/, "$1-$2");
+}
 export function shortName(name: string) {
   const words = name.trim().split(/\s+/);
   if (words.length <= 2) return words.join(" ");

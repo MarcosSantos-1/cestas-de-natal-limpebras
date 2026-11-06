@@ -98,7 +98,9 @@ test("passos públicos e entrega pelo RH com conferência separada", async ({
   await fits(admin);
   await shortPhone(admin);
   await admin.screenshot({ path: "test-results/admin-mobile.png" });
-  await admin.getByLabel("Ou digite o código").fill(code);
+  const manualCode = admin.getByLabel("Ou digite o código");
+  await manualCode.pressSequentially(code.toLowerCase().replace("-", ""));
+  await expect(manualCode).toHaveValue(code);
   await admin
     .getByRole("button", { name: "Conferir código", exact: true })
     .click();

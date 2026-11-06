@@ -7,6 +7,7 @@ import {
   matchesFullName,
   normalizeName,
   normalizeCode,
+  formatCodeInput,
   validSchedule,
   SYLLABLES,
   formatDateTime,
@@ -59,6 +60,15 @@ test("códigos e QR são normalizados sem aceitar dados extras", () => {
     false,
   );
   assert.equal(new Set(SYLLABLES).size, SYLLABLES.length);
+});
+test("máscara do código formata a digitação parcial e recusa caracteres extras", () => {
+  assert.equal(formatCodeInput(""), "");
+  assert.equal(formatCodeInput("l"), "L");
+  assert.equal(formatCodeInput("la-"), "LA");
+  assert.equal(formatCodeInput("la0"), "LA-0");
+  assert.equal(formatCodeInput(" la--0025 "), "LA-0025");
+  assert.equal(formatCodeInput("LA-00256"), null);
+  assert.equal(formatCodeInput("L0"), null);
 });
 test("agenda aceita somente dias reais dentro do período", () => {
   assert.equal(
