@@ -6,9 +6,11 @@ import { database, authentication, serverApp } from "./firebase";
 import {
   Admin,
   Employee,
+  EmployeeFilter,
   ImportRow,
   SYLLABLES,
   digits,
+  employeeFilters,
   matchesFullName,
   normalizeName,
   normalizeCode,
@@ -458,13 +460,35 @@ export async function adminOperation(
     });
   }
   if (action === "admin.list") {
+    const filter = input.filter ?? "all";
+    if (typeof filter !== "string" || !Object.hasOwn(employeeFilters, filter))
+      throw new AppError("Filtro de colaboradores inválido.");
+    const conditions: Record<EmployeeFilter, [string, boolean][]> = {
+      all: [],
+      pending: [
+        ["active", true],
+        ["delivered", false],
+        ["hasSchedule", false],
+      ],
+      scheduled: [
+        ["active", true],
+        ["delivered", false],
+        ["hasSchedule", true],
+      ],
+      inactive: [["active", false]],
+      delivered: [["delivered", true]],
+    };
+    const criteria = conditions[filter as EmployeeFilter];
+    let filtered: FirebaseFirestore.Query = employees();
+    for (const [field, value] of criteria)
+      filtered = filtered.where(field, "==", value);
     const search =
       typeof input.query === "string"
         ? normalizeName(input.query).slice(0, 160)
         : "";
     if (search && /^[\d.\-\s]+$/.test(search)) {
       const numeric = digits(search);
-      let byEmployeeId = employees()
+      let byEmployeeId = filtered
         .where("employeeId", "==", numeric)
         .orderBy(FieldPath.documentId())
         .limit(100);
@@ -481,7 +505,10 @@ export async function adminOperation(
       const items = new Map(
         matches.docs.map((doc) => [doc.id, { ...doc.data(), id: doc.id }]),
       );
-      if (cpfMatch?.exists)
+      if (
+        cpfMatch?.exists &&
+        criteria.every(([field, value]) => cpfMatch.get(field) === value)
+      )
         items.set(cpfMatch.id, { ...cpfMatch.data(), id: cpfMatch.id });
       return {
         items: [...items.values()],
@@ -489,13 +516,13 @@ export async function adminOperation(
       };
     }
     let q = search
-      ? employees()
+      ? filtered
           .orderBy("searchName")
           .orderBy(FieldPath.documentId())
           .where("searchName", ">=", search)
           .where("searchName", "<=", search + "\uf8ff")
           .limit(100)
-      : employees().orderBy(FieldPath.documentId()).limit(100);
+      : filtered.orderBy(FieldPath.documentId()).limit(100);
     if (input.cursor) {
       const cursor = text(input.cursor, "Cursor", 1000);
       if (search) {

@@ -4,7 +4,7 @@ import { onAuthStateChanged, signOut } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { clientAuth } from "@/lib/firebase-client";
 import { api } from "@/lib/api-client";
-import type { Admin, Employee } from "@/lib/domain";
+import type { Admin, Employee, EmployeeFilter } from "@/lib/domain";
 export type Stats = {
   total: number;
   active: number;
@@ -25,7 +25,8 @@ export function useAdmin() {
     [stats, setStats] = useState<Stats | null>(null),
     [rows, setRows] = useState<Employee[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
-    [query, setQuery] = useState("");
+    [query, setQuery] = useState(""),
+    [filter, setFilter] = useState<EmployeeFilter>("all");
   const session = useRef(0);
   const call = useCallback(
     async <T>(
@@ -44,18 +45,25 @@ export function useAdmin() {
     if (generation === session.current) setStats(result);
   }, [call]);
   const loadEmployees = useCallback(
-    async (search = "", append = false, next: string | null = null) => {
+    async (
+      search = "",
+      append = false,
+      next: string | null = null,
+      status = filter,
+    ) => {
       const generation = session.current;
       const result = await call<ListResult>("admin.list", {
         query: search,
         cursor: next,
+        filter: status,
       });
       if (generation !== session.current) return;
       setRows((old) => (append ? [...old, ...result.items] : result.items));
       setCursor(result.cursor);
       setQuery(search);
+      setFilter(status);
     },
-    [call],
+    [call, filter],
   );
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(clientAuth(), (u) => {
@@ -65,6 +73,8 @@ export function useAdmin() {
       setRows([]);
       setStats(null);
       setCursor(null);
+      setQuery("");
+      setFilter("all");
       setError("");
       setNotice("");
       setTab("check");
@@ -111,7 +121,7 @@ export function useAdmin() {
     setTab(next);
     setError("");
     setNotice("");
-    if (next === "employees") void task(() => loadEmployees());
+    if (next === "employees") void task(() => loadEmployees(query));
     if (next === "overview") void task(refresh);
   }
   return {
@@ -131,6 +141,7 @@ export function useAdmin() {
     rows,
     cursor,
     query,
+    filter,
     loadEmployees,
     call,
     logout: () => signOut(clientAuth()),

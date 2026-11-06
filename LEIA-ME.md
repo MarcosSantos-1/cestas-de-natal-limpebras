@@ -75,7 +75,7 @@ npm run firebase:login
 npm run deploy:rules
 ```
 
-O comando tem o projeto `cesta-de-natal-limpebras` explícito e publica somente regras/índices. Elas recusam acesso direto pelo navegador; toda leitura/escrita passa pela API autorizada. Não publique essas regras sobre uma aplicação antiga em operação sem coordenar a troca: a versão antiga deixará de acessar o banco.
+O comando tem o projeto `cesta-de-natal-limpebras` explícito e publica somente regras/índices. Aguarde os índices de `employees` ficarem prontos no Firestore antes de usar os filtros de colaboradores junto com a busca por nome. As regras recusam acesso direto pelo navegador; toda leitura/escrita passa pela API autorizada. Não publique essas regras sobre uma aplicação antiga em operação sem coordenar a troca: a versão antiga deixará de acessar o banco.
 
 O rótulo da campanha é lido no build. Faça um novo deploy quando mudar a configuração. O agendamento é livre a partir do dia atual no fuso de São Paulo e não depende de `PICKUP_START_DATE` ou `PICKUP_END_DATE`; essas variáveis antigas podem ser removidas. O backend usa o Admin SDK no servidor: as permissões são verificadas pela API, não pelas regras do cliente.
 

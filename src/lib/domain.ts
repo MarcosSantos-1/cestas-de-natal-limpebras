@@ -24,6 +24,14 @@ export type Employee = {
   delivery: Delivery | null;
   updatedAt: string;
 };
+export const employeeFilters = {
+  all: "Todos",
+  pending: "Pendentes",
+  scheduled: "Agendados",
+  inactive: "Inativos",
+  delivered: "Retirados",
+} as const;
+export type EmployeeFilter = keyof typeof employeeFilters;
 export type PublicEmployee = Pick<
   Employee,
   "name" | "active" | "code" | "scheduledDate" | "delivery"

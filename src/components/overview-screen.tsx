@@ -3,16 +3,15 @@ import { useState } from "react";
 import { Button } from "@heroui/react/button";
 import { Form } from "@heroui/react/form";
 import { ProgressBar } from "@heroui/react/progress-bar";
-import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowRight,
-  Download,
   PackageCheck,
   Pencil,
   QrCode,
   RefreshCw,
 } from "lucide-react";
 import { Field, Screen, Sheet } from "./ui";
+import { PortalQrSheet } from "./portal-qr-sheet";
 import type { AdminController } from "./use-admin";
 export default function OverviewScreen({
   controller: c,
@@ -21,7 +20,6 @@ export default function OverviewScreen({
   controller: AdminController;
   campaignLabel: string;
 }) {
-  const url = "https://cestas-de-natal-limpebras.vercel.app/";
   const [share, setShare] = useState(false);
   const [editingPending, setEditingPending] = useState(false);
   const calculatedPending = c.stats ? c.stats.total - c.stats.delivered : 0;
@@ -45,20 +43,6 @@ export default function OverviewScreen({
   const percent = c.stats?.total
     ? Math.round((c.stats.delivered / c.stats.total) * 100)
     : 0;
-  function downloadQR() {
-    const svg = document.querySelector(".share-code svg");
-    if (!svg) return;
-    const url = URL.createObjectURL(
-      new Blob([new XMLSerializer().serializeToString(svg)], {
-        type: "image/svg+xml",
-      }),
-    );
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "qr-portal-cestas.svg";
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
   return (
     <Screen id="overview" className="overview-screen">
       <div className="screen-copy compact-copy">
@@ -186,25 +170,7 @@ export default function OverviewScreen({
           </Form>
         ) : null}
       </Sheet>
-      <Sheet
-        open={share}
-        onClose={() => setShare(false)}
-        title="Compartilhe com a equipe"
-      >
-        <div className="share-content">
-          <p>O QR leva ao portal do colaborador.</p>
-          {url ? (
-            <div className="share-code">
-              <QRCodeSVG value={url} size={210} marginSize={3} />
-            </div>
-          ) : null}
-          <Button fullWidth className="primary-button" onPress={downloadQR}>
-            <Download size={19} />
-            Baixar QR do portal
-          </Button>
-          <p className="footnote">cestas-de-natal-limpebras.vercel.app</p>
-        </div>
-      </Sheet>
+      <PortalQrSheet open={share} onClose={() => setShare(false)} />
     </Screen>
   );
 }

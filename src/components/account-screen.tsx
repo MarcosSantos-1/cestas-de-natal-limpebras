@@ -9,12 +9,14 @@ import {
   ChevronRight,
   LogOut,
   Plus,
+  QrCode,
   ShieldCheck,
   Users,
   UserRound,
   KeyRound,
 } from "lucide-react";
 import { Back, Confirm, Feedback, Field, Screen, Sheet } from "./ui";
+import { PortalQrSheet } from "./portal-qr-sheet";
 import type { AdminController } from "./use-admin";
 import type { Admin } from "@/lib/domain";
 const PasswordSheet = dynamic(() => import("./password-sheet"));
@@ -35,6 +37,7 @@ export default function AccountScreen({
     [remove, setRemove] = useState<Admin | null>(null),
     [formError, setFormError] = useState(""),
     [exit, setExit] = useState(false),
+    [share, setShare] = useState(false),
     [changePassword, setChangePassword] = useState(false);
   async function loadAdmins() {
     setView("accesses");
@@ -120,6 +123,15 @@ export default function AccountScreen({
             <ChevronRight size={20} />
           </Link>
           <Button
+            variant="outline"
+            className="account-option"
+            onPress={() => setShare(true)}
+          >
+            <QrCode size={22} />
+            <span>QR code do portal público</span>
+            <ChevronRight size={20} />
+          </Button>
+          <Button
             variant="ghost"
             className="signout-button"
             onPress={() => setExit(true)}
@@ -200,6 +212,7 @@ export default function AccountScreen({
           )
         }
       />
+      <PortalQrSheet open={share} onClose={() => setShare(false)} />
       <Sheet
         open={create}
         onClose={() => {

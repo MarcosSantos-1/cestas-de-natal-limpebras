@@ -310,6 +310,36 @@ test("desktop com sidebar, busca por matrícula/CPF/nome e perfil longo legível
     "cestas-de-natal-limpebras.vercel.app",
   );
 });
+test("filtro de colaboradores funciona junto com a busca", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await login(page);
+  await page
+    .getByRole("button", { name: "Colaboradores", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Filtrar colaboradores (Todos)" })
+    .click();
+  await page.getByRole("button", { name: "Inativos", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: /Ana Oliveira/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /João da Silva/ })).toHaveCount(
+    0,
+  );
+  await page.getByLabel("Buscar colaborador").fill("João");
+  await page.getByRole("button", { name: "Buscar", exact: true }).click();
+  await expect(page.getByText("Nenhum resultado.")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Filtrar colaboradores (Inativos)" })
+    .click();
+  await page.getByRole("button", { name: "Todos", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: /João da Silva/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Ana Oliveira/ })).toHaveCount(
+    0,
+  );
+});
 test("acessos do RH em passos e confirmações HeroUI", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await login(page);

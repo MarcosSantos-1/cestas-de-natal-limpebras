@@ -86,6 +86,16 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
   );
   assert.equal(firstNameOnly.status, 404);
   const identity = { name: "  JOAO   SILVA  ", cpf: row.cpf };
+  const filteredEmployees = async (filter: string, query?: string) =>
+    (
+      (await adminOperation("admin.list", { filter, query }, actor)) as {
+        items: Employee[];
+      }
+    ).items.map((employee) => employee.id);
+  assert.deepEqual(await filteredEmployees("pending", "joao"), [
+    employeeRef.id,
+  ]);
+  assert.deepEqual(await filteredEmployees("scheduled", row.cpf), []);
   assert.equal(
     (await publicOperation("public.lookup", identity)).name,
     row.name,
@@ -125,6 +135,10 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     date: "2099-12-10",
   });
   assert.equal(scheduled.scheduledDate, "2099-12-10");
+  assert.deepEqual(await filteredEmployees("scheduled", row.employeeId), [
+    employeeRef.id,
+  ]);
+  assert.deepEqual(await filteredEmployees("pending"), []);
   assert.notEqual(scheduled.code, requested.code);
   await adminOperation(
     "admin.inactivateEmployees",
@@ -135,6 +149,10 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
     adminOperation("admin.deliver", { code: scheduled.code }, actor),
     /inativo/,
   );
+  assert.deepEqual(await filteredEmployees("inactive", row.cpf), [
+    employeeRef.id,
+  ]);
+  assert.deepEqual(await filteredEmployees("scheduled"), []);
   await adminOperation(
     "admin.status",
     { id: employeeKey(row.cpf), active: true },
@@ -147,6 +165,10 @@ test("fluxo real nos emuladores: autorização, pedidos, concorrência, importa�
   assert.equal(concurrent.filter((r) => r.status === "fulfilled").length, 1);
   assert.equal(concurrent.filter((r) => r.status === "rejected").length, 1);
   const delivered = await publicOperation("public.lookup", identity);
+  assert.deepEqual(await filteredEmployees("delivered", "joao"), [
+    employeeRef.id,
+  ]);
+  assert.deepEqual(await filteredEmployees("scheduled"), []);
   assert.equal(delivered.delivery?.operatorName, "Marcos Vinicius");
   assert.equal(delivered.delivery?.operatorEmployeeId, "2550");
   assert.equal(delivered.delivery?.operatorUid, "");

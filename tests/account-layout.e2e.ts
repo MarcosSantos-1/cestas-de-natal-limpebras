@@ -36,4 +36,15 @@ test("conta não cria rolagem horizontal no painel nem no documento", async ({
       .soft(sizes, JSON.stringify(viewport))
       .toEqual({ page: 0, panel: 0, card: 0 });
   }
+  await page.getByRole("button", { name: "QR code do portal público" }).click();
+  const share = page.getByRole("dialog", { name: "Compartilhe com a equipe" });
+  await expect(
+    share.getByText("cestas-de-natal-limpebras.vercel.app"),
+  ).toBeVisible();
+  await expect(share.locator(".share-code svg")).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    share.getByRole("button", { name: "Baixar QR do portal" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toBe("qr-portal-cestas.svg");
 });

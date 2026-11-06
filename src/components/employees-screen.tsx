@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Download,
   FileSpreadsheet,
+  ListFilter,
   Plus,
   Search,
   Upload,
@@ -21,6 +22,8 @@ import { Confirm, Field, Feedback, Screen, Sheet } from "./ui";
 import type { AdminController, ListResult } from "./use-admin";
 import {
   Employee,
+  EmployeeFilter,
+  employeeFilters,
   formatCpf,
   formatDateTime,
   formatDay,
@@ -34,6 +37,7 @@ export default function EmployeesScreen({
   controller: AdminController;
 }) {
   const [search, setSearch] = useState(c.query),
+    [filterOpen, setFilterOpen] = useState(false),
     [importOpen, setImportOpen] = useState(false),
     [preview, setPreview] = useState<ImportPreview | null>(null),
     [progress, setProgress] = useState(0),
@@ -191,6 +195,16 @@ export default function EmployeesScreen({
         >
           <Search size={21} />
         </Button>
+        <Button
+          type="button"
+          variant={c.filter === "all" ? "outline" : "primary"}
+          aria-label={`Filtrar colaboradores (${employeeFilters[c.filter]})`}
+          isDisabled={c.busy}
+          isIconOnly
+          onPress={() => setFilterOpen(true)}
+        >
+          <ListFilter size={21} />
+        </Button>
       </Form>
       {bulkMode ? (
         <Button
@@ -274,7 +288,7 @@ export default function EmployeesScreen({
             <h2>{c.stats?.total ? "Nenhum resultado." : "Vamos começar?"}</h2>
             <p>
               {c.stats?.total
-                ? "Busque pelo nome, matrícula ou CPF."
+                ? "Altere a busca ou o filtro."
                 : "Importe a planilha de Matrícula, Nome e CPF."}
             </p>
           </div>
@@ -292,6 +306,34 @@ export default function EmployeesScreen({
           </Button>
         ) : null}
       </div>
+      <Sheet
+        open={filterOpen}
+        onClose={() => setFilterOpen(false)}
+        title="Filtrar colaboradores"
+      >
+        <div className="access-form">
+          {(Object.entries(employeeFilters) as [EmployeeFilter, string][]).map(
+            ([filter, label]) => (
+              <Button
+                key={filter}
+                variant={c.filter === filter ? "primary" : "outline"}
+                aria-pressed={c.filter === filter}
+                fullWidth
+                onPress={() => {
+                  setFilterOpen(false);
+                  if (c.filter === filter) return;
+                  setBulkIds([]);
+                  void c.task(() =>
+                    c.loadEmployees(search, false, null, filter),
+                  );
+                }}
+              >
+                {label}
+              </Button>
+            ),
+          )}
+        </div>
+      </Sheet>
       <Sheet
         open={importOpen}
         onClose={() => {
@@ -434,7 +476,10 @@ export default function EmployeesScreen({
                 });
                 setCreateOpen(false);
                 setSearch(newCpf);
-                await Promise.all([c.loadEmployees(newCpf), c.refresh()]);
+                await Promise.all([
+                  c.loadEmployees(newCpf, false, null, "all"),
+                  c.refresh(),
+                ]);
                 c.setNotice("Colaborador adicionado.");
               });
             }}
