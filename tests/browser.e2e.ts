@@ -331,8 +331,29 @@ test("acessos do RH em passos e confirmações HeroUI", async ({ page }) => {
     .getByLabel("E-mail", { exact: true })
     .fill("conferente@example.test");
   await page.getByRole("button", { name: "Continuar", exact: true }).click();
-  await page.getByLabel("Senha", { exact: true }).fill("Password12345!");
-  await page.getByLabel("Confirmar senha").fill("Password12345!");
+  const password = page.getByLabel("Senha", { exact: true });
+  const confirmation = page.getByLabel("Confirmar senha", { exact: true });
+  await password.fill("Password12345!");
+  await confirmation.fill("Password12345!");
+  await expect(password).toHaveAttribute("type", "password");
+  await expect(confirmation).toHaveAttribute("type", "password");
+  await page
+    .getByRole("button", { name: "Mostrar senha", exact: true })
+    .click();
+  await expect(password).toHaveAttribute("type", "text");
+  await expect(confirmation).toHaveAttribute("type", "password");
+  await page
+    .getByRole("button", { name: "Mostrar senha de confirmação" })
+    .click();
+  await expect(confirmation).toHaveAttribute("type", "text");
+  await page
+    .getByRole("button", { name: "Ocultar senha", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Ocultar senha de confirmação" })
+    .click();
+  await expect(password).toHaveAttribute("type", "password");
+  await expect(confirmation).toHaveAttribute("type", "password");
   await page.getByRole("button", { name: "Criar acesso" }).click();
   await expect(
     page.getByText("Acesso criado.", { exact: false }),

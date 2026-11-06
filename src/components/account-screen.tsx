@@ -256,7 +256,7 @@ export default function AccountScreen({
               <Field
                 label="Senha"
                 name="newPassword"
-                type="password"
+                passwordToggle="senha"
                 value={password}
                 onChange={setPassword}
                 autoComplete="new-password"
@@ -268,7 +268,7 @@ export default function AccountScreen({
               <Field
                 label="Confirmar senha"
                 name="confirmPassword"
-                type="password"
+                passwordToggle="senha de confirmação"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
                 autoComplete="new-password"

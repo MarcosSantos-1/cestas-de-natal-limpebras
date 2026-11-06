@@ -171,6 +171,20 @@ a:focus-visible {
 .field .input::placeholder {
   color: #9aa6b6;
 }
+.password-input {
+  position: relative;
+}
+.field .password-input .input {
+  padding-inline-end: 54px;
+}
+.password-input .password-toggle {
+  position: absolute;
+  inset-inline-end: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+}
 .field .input:focus,
 .field .input[data-focused="true"] {
   outline: none;

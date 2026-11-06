@@ -1,6 +1,6 @@
 "use client";
 import type { ComponentProps, ReactNode } from "react";
-import { useEffect, isValidElement } from "react";
+import { useEffect, isValidElement, useState } from "react";
 import { TextField } from "@heroui/react/textfield";
 import { Input } from "@heroui/react/input";
 import { Label } from "@heroui/react/label";
@@ -10,7 +10,13 @@ import { AlertDialog } from "@heroui/react/alert-dialog";
 import { Modal } from "@heroui/react/modal";
 import { Button } from "@heroui/react/button";
 import { motion, useReducedMotion } from "motion/react";
-import { AlertCircle, CheckCircle2, ChevronLeft } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronLeft,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 
 type FieldProps = Omit<
   ComponentProps<typeof TextField>,
@@ -21,6 +27,7 @@ type FieldProps = Omit<
   placeholder?: string;
   className?: string;
   autoFocus?: boolean;
+  passwordToggle?: string;
 };
 export function Field({
   label,
@@ -28,16 +35,43 @@ export function Field({
   placeholder,
   className = "",
   autoFocus,
+  passwordToggle,
+  type,
   ...props
 }: FieldProps) {
+  const [visible, setVisible] = useState(false);
+  const input = (
+    <Input
+      inputMode={inputMode}
+      placeholder={placeholder}
+      autoFocus={autoFocus}
+    />
+  );
   return (
-    <TextField {...props} className={`field ${className}`}>
+    <TextField
+      {...props}
+      type={passwordToggle ? (visible ? "text" : "password") : type}
+      className={`field ${className}`}
+    >
       <Label>{label}</Label>
-      <Input
-        inputMode={inputMode}
-        placeholder={placeholder}
-        autoFocus={autoFocus}
-      />
+      {passwordToggle ? (
+        <div className="password-input">
+          {input}
+          <Button
+            type="button"
+            variant="ghost"
+            isIconOnly
+            className="password-toggle"
+            aria-label={`${visible ? "Ocultar" : "Mostrar"} ${passwordToggle}`}
+            isDisabled={props.isDisabled}
+            onPress={() => setVisible((current) => !current)}
+          >
+            {visible ? <EyeOff size={20} /> : <Eye size={20} />}
+          </Button>
+        </div>
+      ) : (
+        input
+      )}
       <FieldError />
     </TextField>
   );
